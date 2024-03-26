@@ -6,7 +6,7 @@ import (
 )
 
 type Viewing interface {
-	GetTables() ([]models.Table, error)
+	GetTables() ([]models.Table, []string, error)
 }
 
 type Repository struct {

@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/nakagami/firebirdsql"
-	indicator_tables_viewer "indicator-tables-viewer"
+	"indicator-tables-viewer/internal/config"
 	"indicator-tables-viewer/internal/repository"
 	"log"
 )
@@ -22,13 +22,13 @@ func main() {
 
 	a.Run()
 
-	cfg := indicator_tables_viewer.NewConfig()
+	cfg := config.NewConfig()
 	db, err := repository.NewFirebirdDB(cfg)
 	if err != nil {
 		log.Println(err)
 	}
 	repo := repository.NewRepository(db)
-	tablesList, _ := repo.GetTables()
+	tablesList, tablesNames, _ := repo.GetTables()
 
-	fmt.Println(tablesList)
+	fmt.Println(tablesList, tablesNames)
 }

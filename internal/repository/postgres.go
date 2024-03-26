@@ -3,10 +3,10 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	indicator_tables_viewer "indicator-tables-viewer"
+	"indicator-tables-viewer/internal/config"
 )
 
-func NewFirebirdDB(cfg *indicator_tables_viewer.Config) (*sql.DB, error) {
+func NewFirebirdDB(cfg *config.Config) (*sql.DB, error) {
 	connectionString := fmt.Sprintf("%s:%s@%s:%s/%s/%s",
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Path, cfg.DBName)
 	fmt.Printf("connection string is: %s\n", connectionString)

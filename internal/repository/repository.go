@@ -2,11 +2,12 @@ package repository
 
 import (
 	"database/sql"
-	"indicator-tables-viewer/internal/models"
 )
 
 type Viewing interface {
-	GetTables() ([]models.Table, []string, error)
+	GetTable() ([]string, error)
+	GetHeader(tableName string) ([]string, error)
+	GetIndicatorMaket(tableName string) ([]string, error)
 }
 
 type Repository struct {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/nakagami/firebirdsql"
 	"indicator-tables-viewer/internal/config"
@@ -14,13 +15,8 @@ import (
 func main() {
 
 	a := app.New()
-	w := a.NewWindow(" ")
-
-	w.SetContent(widget.NewLabel(" "))
-	w.Resize(fyne.NewSize(600, 400))
-	w.Show()
-
-	a.Run()
+	window := a.NewWindow("Dropdown Example")
+	window.Resize(fyne.NewSize(1000, 600))
 
 	cfg := config.NewConfig()
 	db, err := repository.NewFirebirdDB(cfg)
@@ -28,7 +24,20 @@ func main() {
 		log.Println(err)
 	}
 	repo := repository.NewRepository(db)
-	tablesList, tablesNames, _ := repo.GetTables()
+	tablesList, _ := repo.GetTable()
 
-	fmt.Println(tablesList, tablesNames)
+	dropdown := widget.NewSelect(tablesList, func(selected string) {
+		tableName := selected[:7]
+		header, _ := repo.Viewing.GetHeader(tableName)
+		indicatorNumbers, _ := repo.Viewing.GetIndicatorMaket(tableName)
+		fmt.Println(header)
+		fmt.Println("fetched the indicators' numbers", indicatorNumbers)
+	})
+	content := container.NewVBox(
+		widget.NewLabel("Select a table:"),
+		dropdown,
+	)
+	window.SetContent(content)
+	window.ShowAndRun()
+
 }

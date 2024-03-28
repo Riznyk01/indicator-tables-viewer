@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -30,8 +29,8 @@ func main() {
 		tableName := selected[:7]
 		header, _ := repo.Viewing.GetHeader(tableName)
 		indicatorNumbers, _ := repo.Viewing.GetIndicatorMaket(tableName)
-		fmt.Println(header)
-		fmt.Println("fetched the indicators' numbers", indicatorNumbers)
+		log.Printf("tmp message table header fetched: %s\n", header)
+		log.Printf("tmp message fetched the indicators' numbers: %s\n", indicatorNumbers)
 	})
 	content := container.NewVBox(
 		widget.NewLabel("Select a table:"),

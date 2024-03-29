@@ -1,26 +1,33 @@
 package config
 
+import (
+	"github.com/pelletier/go-toml"
+	"log"
+)
+
 type Config struct {
-	Host     string
-	Port     string
-	Path     string
-	Username string
-	DBName   string
-	Password string
+	Host     string `toml:"host"`
+	Port     string `toml:"port"`
+	Path     string `toml:"path"`
+	Username string `toml:"username"`
+	DBName   string `toml:"db_name"`
+	Password string `toml:"password"`
 }
 
-func NewConfig() *Config {
-	return &Config{
-		//Host: "localhost",
-		//Host: "127.0.0.1",
-		Host: "192.168.0.1",
-		Port: "3050",
-		//Path: "home/user/db",
-		//Path: "C:/childrend",
-		Path:     "D:/s/Temp/temp",
-		Username: "sysdba",
-		DBName:   "MEDSTAT.GDB",
-		Password: "1",
-		//Password: "masterkey",
+func MustLoad() *Config {
+
+	configPath := "config/config_1.toml"
+	// check if file exists
+	cfg, err := toml.LoadFile(configPath)
+	if err != nil {
+		log.Fatalf("error loading config file: %s", err)
 	}
+
+	var config Config
+
+	if err := cfg.Unmarshal(&config); err != nil {
+		log.Fatalf("error decoding config: %s", err)
+	}
+
+	return &config
 }

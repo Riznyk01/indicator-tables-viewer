@@ -1,0 +1,6 @@
+host = "192.168.0.1"
+port = "3050"
+path = "D:/s/Temp/temp"
+username = "sysdba"
+db_name =   "MEDSTAT.GDB"
+password = "1"

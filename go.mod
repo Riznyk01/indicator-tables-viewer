@@ -5,6 +5,7 @@ go 1.22.0
 require (
 	fyne.io/fyne/v2 v2.4.4
 	github.com/nakagami/firebirdsql v0.9.8
+	github.com/pelletier/go-toml v1.9.5
 )
 
 require (

@@ -8,7 +8,8 @@ import (
 type Viewing interface {
 	GetTable() ([]string, error)
 	GetHeader(tableName string) ([]string, error)
-	GetIndicatorMaket(tableName string) ([]models.IndicatorData, error)
+	GetIndicatorNumbers(tableName string) ([]models.IndicatorData, error)
+	GetIndicator(shifr, npokaz string) string
 }
 
 type Repository struct {

@@ -41,6 +41,12 @@ func (r *StaticResource) Content() []byte {
 }
 
 func main() {
+	logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal("error occurred while opening logfile:", err)
+	}
+	defer logFile.Close()
+	//log.SetOutput(logFile)
 	log.SetOutput(os.Stdout)
 
 	a := app.New()
@@ -58,7 +64,7 @@ func main() {
 	}
 	repo := repository.NewRepository(db)
 
-	w := newTerminalWindow(a, repo)
+	w := newViewerWindow(a, repo, cfg)
 	w.ShowAndRun()
 }
 
@@ -87,11 +93,10 @@ func LoadRecourseFromPath(path string) (Resource, error) {
 	return NewStaticResource(name, iconData), nil
 }
 
-func newTerminalWindow(app fyne.App, repo *repository.Repository) fyne.Window {
+func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Config) fyne.Window {
 	statData := newData()
-	windowSize := fyne.NewSize(1500, 800)
-	tableSize := fyne.NewSize(1500, 800)
-	var tableName string
+	windowSize := fyne.NewSize(cfg.WindowWidth, cfg.WindowHeight)
+	tableSize := fyne.NewSize(cfg.WindowWidth, cfg.WindowHeight)
 
 	window := app.NewWindow("Indicator tables viewer")
 	window.Resize(windowSize)
@@ -99,38 +104,47 @@ func newTerminalWindow(app fyne.App, repo *repository.Repository) fyne.Window {
 	tablesList, _ := repo.GetTable()
 
 	t := newTable(statData)
-	t.SetRowHeight(0, float32(140))
+	// set the header height
+	t.SetRowHeight(0, cfg.HeaderHeight)
+	// set the data rows height
+	for row := 1; row < len(statData); row++ {
+		t.SetRowHeight(row, cfg.RowHeight)
+	}
+
 	dropdown := widget.NewSelect(tablesList, func(selected string) {
-		tableName = selected[:7]
+		tableName := selected[:7]
+		formName := "F" + selected[1:3]
 		log.Printf("%s selected", tableName)
+		log.Printf("%s selected", formName)
 		statData[0], _ = repo.GetHeader(tableName)
 		lineSplit(statData)
-		for l := 0; l < len(statData[0]); l++ {
-			t.SetColumnWidth(l, float32(lenBefore(statData[0][l]))*6)
-		}
-		indicators, _ := repo.GetIndicatorMaket(tableName)
+
+		indicators, _ := repo.GetIndicatorNumbers(tableName)
 		for m := 1; m < len(statData); m++ {
 			statData[m] = []string{"", "", "", "", "", "", "", "", "", "", "", "", "", ""}
 		}
 
 		for ind, _ := range indicators {
 			statData[ind+1] = []string{
-				indicators[ind].P1,
-				indicators[ind].P2,
-				indicators[ind].P3,
-				indicators[ind].P4,
-				indicators[ind].P5,
-				indicators[ind].P6,
-				indicators[ind].P7,
-				indicators[ind].P8,
-				indicators[ind].P9,
-				indicators[ind].P10,
-				indicators[ind].P11,
-				indicators[ind].P12,
-				indicators[ind].P13,
-				indicators[ind].P14,
+				repo.GetIndicator(formName, indicators[ind].P1),
+				repo.GetIndicator(formName, indicators[ind].P2),
+				repo.GetIndicator(formName, indicators[ind].P3),
+				repo.GetIndicator(formName, indicators[ind].P4),
+				repo.GetIndicator(formName, indicators[ind].P5),
+				repo.GetIndicator(formName, indicators[ind].P6),
+				repo.GetIndicator(formName, indicators[ind].P7),
+				repo.GetIndicator(formName, indicators[ind].P8),
+				repo.GetIndicator(formName, indicators[ind].P9),
+				repo.GetIndicator(formName, indicators[ind].P10),
+				repo.GetIndicator(formName, indicators[ind].P11),
+				repo.GetIndicator(formName, indicators[ind].P12),
+				repo.GetIndicator(formName, indicators[ind].P13),
+				repo.GetIndicator(formName, indicators[ind].P14),
 			}
 		}
+
+		setColumnWidth(t, statData)
+
 		t.Refresh()
 	})
 
@@ -145,6 +159,22 @@ func newTerminalWindow(app fyne.App, repo *repository.Repository) fyne.Window {
 	window.SetContent(container.NewVBox(content, scr))
 	return window
 }
+
+// setColumnWidth set the columns width after fetching new data
+// depending on data len and splitting by \n
+func setColumnWidth(t *widget.Table, statData [][]string) {
+	for c := 0; c < len(statData[0]); c++ {
+		var maxLen int
+		for r := 0; r < len(statData); r++ {
+			if len(statData[r][c]) > maxLen {
+				maxLen = maxLengthAfterSplit(statData[r][c])
+			}
+		}
+		log.Printf("max text len for the %v column is: %v", c, maxLen)
+		t.SetColumnWidth(c, float32(maxLen)*7)
+	}
+}
+
 func lineSplit(data [][]string) {
 	every := 7
 	for n, colName := range data[0] {
@@ -162,18 +192,25 @@ func lineSplit(data [][]string) {
 	}
 }
 
-func lenBefore(str string) (length int) {
-	index := strings.Index(str, "\n")
-	if index != -1 {
-		length = index
+func maxLengthAfterSplit(str string) int {
+	substrings := strings.Split(str, "\n")
+	maxLength := 0
+
+	if strings.Contains(str, "\n") {
+		for _, sub := range substrings {
+			if len(sub) > maxLength {
+				maxLength = len(sub)
+			}
+		}
 	} else {
-		length = len(str)
+		maxLength = len(str)
 	}
-	return length
+
+	return maxLength
 }
 
 func newData() [][]string {
-	rows := 100
+	rows := 200
 	data := make([][]string, rows)
 	for i := 0; i < rows; i++ {
 		row := make([]string, 14)
@@ -184,8 +221,9 @@ func newData() [][]string {
 	}
 	return data
 }
+
 func newTable(statData [][]string) *widget.Table {
-	tbl := widget.NewTable(
+	tbl := widget.NewTableWithHeaders(
 		func() (int, int) {
 			return len(statData), len(statData[0])
 		},

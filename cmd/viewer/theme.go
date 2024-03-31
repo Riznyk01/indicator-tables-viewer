@@ -12,7 +12,7 @@ type viewerTheme struct {
 
 func newTermTheme() *viewerTheme {
 	return &viewerTheme{
-		Theme: fyne.CurrentApp().Settings().Theme(), fontSize: 12,
+		Theme: fyne.CurrentApp().Settings().Theme(), fontSize: 13,
 	}
 }
 

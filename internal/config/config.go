@@ -6,12 +6,16 @@ import (
 )
 
 type Config struct {
-	Host     string `toml:"host"`
-	Port     string `toml:"port"`
-	Path     string `toml:"path"`
-	Username string `toml:"username"`
-	DBName   string `toml:"db_name"`
-	Password string `toml:"password"`
+	Host         string  `toml:"host"`
+	Port         string  `toml:"port"`
+	Path         string  `toml:"path"`
+	Username     string  `toml:"username"`
+	DBName       string  `toml:"db_name"`
+	Password     string  `toml:"password"`
+	HeaderHeight float32 `toml:"header_row_height"`
+	RowHeight    float32 `toml:"row_height"`
+	WindowHeight float32 `toml:"window_height"`
+	WindowWidth  float32 `toml:"window_width"`
 }
 
 func MustLoad() *Config {

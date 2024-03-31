@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"indicator-tables-viewer/internal/models"
 	"log"
+	"strconv"
 )
 
 type ViewingFirebird struct {
@@ -56,7 +57,7 @@ func (v *ViewingFirebird) GetTable() ([]string, error) {
 			log.Println("Error scanning rows:", err)
 			return nil, err
 		}
-		tableNames = append(tableNames, fmt.Sprintf("%s %s", column1, column2))
+		tableNames = append(tableNames, fmt.Sprintf("%s (%s)", column1, column2))
 	}
 	if err := rows.Err(); err != nil {
 		log.Println("Error iterating over rows:", err)
@@ -94,8 +95,8 @@ func (v *ViewingFirebird) GetHeader(tableName string) ([]string, error) {
 }
 
 // GetIndicatorMaket ...
-func (v *ViewingFirebird) GetIndicatorMaket(tableName string) ([]models.IndicatorData, error) {
-	fc := "GetIndicatorMaket"
+func (v *ViewingFirebird) GetIndicatorNumbers(tableName string) ([]models.IndicatorData, error) {
+	fc := "GetIndicatorNumbers"
 	var indicatorsRowsFirebird []IndicatorDataFirebird
 
 	query := "SELECT * FROM PMAKET WHERE TABL = ?"
@@ -141,6 +142,35 @@ func (v *ViewingFirebird) GetIndicatorMaket(tableName string) ([]models.Indicato
 	}
 	log.Printf("the indicators' numbers fetched from the DB are: %v\n", indicatorsRowsFirebird)
 	return handleNullString(indicatorsRowsFirebird), nil
+}
+
+// GetIndicator ...
+func (v *ViewingFirebird) GetIndicator(shifr, npokaz string) string {
+	fc := "GetIndicator"
+
+	if npokaz == "" {
+		return ""
+	}
+	var mnojitNum int
+	var ngrup, chislit, znamet, mnojitStr string
+	query := "SELECT NGRUP, CHISLIT, ZNAMET, MNOJIT FROM SPPOK WHERE SHIFR = ? AND NPOKAZ = ?"
+	err := v.db.QueryRow(query, shifr, npokaz).Scan(&ngrup, &chislit, &znamet, &mnojitNum)
+	if err != nil {
+		log.Printf("%s error occurred while querying database: %v\n", fc, err)
+		return ""
+	}
+
+	if mnojitNum == 1000 {
+		mnojitStr = "1K"
+	} else if mnojitNum == 10000 {
+		mnojitStr = "10K"
+	} else if mnojitNum == 100000 {
+		mnojitStr = "100K"
+	} else {
+		mnojitStr = strconv.Itoa(mnojitNum)
+	}
+
+	return fmt.Sprintf("#%s (NGRUP: %s)\n (%s)*%s/\n(%s)", npokaz, ngrup, chislit, mnojitStr, znamet)
 }
 
 func handleNullString(indicatorsNumbers []IndicatorDataFirebird) []models.IndicatorData {

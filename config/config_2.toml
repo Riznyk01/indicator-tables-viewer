@@ -1,6 +1,8 @@
 host = "192.168.0.1"
 port = "3050"
-path = "D:/s/Temp/temp"
+path = "D:/s\\medstat\\base\\kvartal_2024_1"
 username = "sysdba"
-db_name =   "MEDSTAT.GDB"
+db_name = "MEDSTAT.GDB"
 password = "1"
+header_row_height = 180.0
+row_height = 80.0

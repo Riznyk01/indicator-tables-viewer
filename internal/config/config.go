@@ -3,7 +3,10 @@ package config
 import (
 	"github.com/pelletier/go-toml"
 	"log"
+	"os"
 )
+
+var configPath = "config/config_2.toml"
 
 type Config struct {
 	Host         string  `toml:"host"`
@@ -20,7 +23,6 @@ type Config struct {
 
 func MustLoad() *Config {
 
-	configPath := "config/config_1.toml"
 	// check if file exists
 	cfg, err := toml.LoadFile(configPath)
 	if err != nil {
@@ -34,4 +36,22 @@ func MustLoad() *Config {
 	}
 
 	return &config
+}
+
+// UpdatePath updates the config file on the disk if it has been changed
+func UpdatePath(config *Config, newPath string) error {
+	config.Path = newPath
+
+	file, err := os.OpenFile(configPath, os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := toml.NewEncoder(file)
+	if err = encoder.Encode(*config); err != nil {
+		return err
+	}
+
+	return nil
 }

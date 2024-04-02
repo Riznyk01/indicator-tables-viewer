@@ -4,4 +4,5 @@ path = "C:/tmp"
 username = "sysdba"
 db_name =   "MEDSTAT.GDB"
 password = "masterkey"
-
+header_row_height = 180.0
+row_height = 80.0

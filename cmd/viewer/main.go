@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/nakagami/firebirdsql"
 	"indicator-tables-viewer/internal/config"
@@ -41,34 +42,97 @@ func (r *StaticResource) Content() []byte {
 }
 
 func main() {
-	logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatal("error occurred while opening logfile:", err)
-	}
-	defer logFile.Close()
-	//log.SetOutput(logFile)
-	log.SetOutput(os.Stdout)
+	//logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	//if err != nil {
+	//	log.Fatal("error occurred while opening logfile:", err)
+	//}
+	//defer logFile.Close()
+	////log.SetOutput(logFile)
+	//log.SetOutput(os.Stdout)
 
 	a := app.New()
 
-	r, _ := LoadRecourseFromPath("cmd/viewer/data/Icon.png")
+	r, _ := loadRecourseFromPath("cmd/viewer/data/Icon.png")
 	a.SetIcon(r)
 
 	sizer := newTermTheme()
 	a.Settings().SetTheme(sizer)
 
 	cfg := config.MustLoad()
-	db, err := repository.NewFirebirdDB(cfg)
-	if err != nil {
-		log.Println(err)
-	}
-	repo := repository.NewRepository(db)
 
-	w := newViewerWindow(a, repo, cfg)
-	w.ShowAndRun()
+	login := a.NewWindow("Login Form")
+
+	usernameEntry := widget.NewEntry()
+	usernameEntry.SetText(cfg.Username)
+	usernameEntry.SetPlaceHolder("Username")
+
+	passwordEntry := widget.NewPasswordEntry()
+	passwordEntry.SetText(cfg.Password)
+	passwordEntry.SetPlaceHolder("Password")
+
+	dbPath := widget.NewLabel(cfg.Path + "/" + cfg.DBName)
+	dbPathText := widget.NewLabel("Path to DB:")
+	fileChooser := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
+		if err != nil {
+			log.Println("Error opening file:", err)
+			return
+		}
+		if reader == nil {
+			log.Println("No file selected")
+			return
+		}
+		filePath := reader.URI().Path()
+		folderPath := filepath.Dir(filePath)
+		log.Printf("The DB path is selected: %s\n", folderPath)
+		log.Printf("Trimmed path: %s\n", folderPath[2:])
+		cfg.Path = "D:/s" + folderPath[2:]
+		dbPath.SetText(cfg.Path + "/" + cfg.DBName)
+		config.UpdatePath(cfg, cfg.Path)
+		if err != nil {
+			log.Printf("error occurred while updating th config file: %v", err)
+		}
+	}, login)
+
+	selectFileButton := widget.NewButton("Select DB", func() {
+		fileChooser.Show()
+	})
+
+	errorLabel := widget.NewLabel("")
+	loginButton := widget.NewButton("Login", func() {
+		db, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text)
+		if err != nil {
+			log.Println(err)
+			errorLabel.SetText(err.Error())
+		} else {
+			login.Hide()
+			log.Printf("Connected")
+			repo := repository.NewRepository(db)
+			newViewerWindow(a, repo, cfg)
+		}
+	})
+
+	DBinfo := container.NewHBox(
+		dbPathText,
+		dbPath,
+	)
+
+	loginForm := container.NewVBox(
+		usernameEntry,
+		passwordEntry,
+		DBinfo,
+		selectFileButton,
+		errorLabel,
+		loginButton,
+	)
+
+	login.SetContent(loginForm)
+	login.Resize(fyne.NewSize(700, 400))
+	login.CenterOnScreen()
+	login.Show()
+	a.Run()
 }
 
-func LoadRecourseFromPath(path string) (Resource, error) {
+func loadRecourseFromPath(path string) (Resource, error) {
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -93,14 +157,15 @@ func LoadRecourseFromPath(path string) (Resource, error) {
 	return NewStaticResource(name, iconData), nil
 }
 
-func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Config) fyne.Window {
+func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Config) { //fyne.Window {
+	log.Printf("Main window is started")
 	statData := newData()
 	windowSize := fyne.NewSize(cfg.WindowWidth, cfg.WindowHeight)
 	tableSize := fyne.NewSize(cfg.WindowWidth, cfg.WindowHeight)
 
 	window := app.NewWindow("Indicator tables viewer")
 	window.Resize(windowSize)
-
+	window.SetMaster()
 	tablesList, _ := repo.GetTable()
 
 	t := newTable(statData)
@@ -116,35 +181,36 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 		formName := "F" + selected[1:3]
 		log.Printf("%s selected", tableName)
 		log.Printf("%s selected", formName)
-		statData[0], _ = repo.GetHeader(tableName)
+		// get where columns names is located
+		colNameLocation, _ := repo.GetColNameLocation(tableName)
+		// get the tables` header
+		statData[0], _ = repo.GetHeader(colNameLocation)
 		lineSplit(statData)
-
 		indicators, _ := repo.GetIndicatorNumbers(tableName)
 		for m := 1; m < len(statData); m++ {
-			statData[m] = []string{"", "", "", "", "", "", "", "", "", "", "", "", "", ""}
+			statData[m] = []string{"empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty"}
 		}
-
-		for ind, _ := range indicators {
-			statData[ind+1] = []string{
-				repo.GetIndicator(formName, indicators[ind].P1),
-				repo.GetIndicator(formName, indicators[ind].P2),
-				repo.GetIndicator(formName, indicators[ind].P3),
-				repo.GetIndicator(formName, indicators[ind].P4),
-				repo.GetIndicator(formName, indicators[ind].P5),
-				repo.GetIndicator(formName, indicators[ind].P6),
-				repo.GetIndicator(formName, indicators[ind].P7),
-				repo.GetIndicator(formName, indicators[ind].P8),
-				repo.GetIndicator(formName, indicators[ind].P9),
-				repo.GetIndicator(formName, indicators[ind].P10),
-				repo.GetIndicator(formName, indicators[ind].P11),
-				repo.GetIndicator(formName, indicators[ind].P12),
-				repo.GetIndicator(formName, indicators[ind].P13),
-				repo.GetIndicator(formName, indicators[ind].P14),
+		if len(indicators) != 0 {
+			for ind, _ := range indicators {
+				statData[ind+1] = []string{
+					repo.GetIndicator(formName, indicators[ind].P1),
+					repo.GetIndicator(formName, indicators[ind].P2),
+					repo.GetIndicator(formName, indicators[ind].P3),
+					repo.GetIndicator(formName, indicators[ind].P4),
+					repo.GetIndicator(formName, indicators[ind].P5),
+					repo.GetIndicator(formName, indicators[ind].P6),
+					repo.GetIndicator(formName, indicators[ind].P7),
+					repo.GetIndicator(formName, indicators[ind].P8),
+					repo.GetIndicator(formName, indicators[ind].P9),
+					repo.GetIndicator(formName, indicators[ind].P10),
+					repo.GetIndicator(formName, indicators[ind].P11),
+					repo.GetIndicator(formName, indicators[ind].P12),
+					repo.GetIndicator(formName, indicators[ind].P13),
+					repo.GetIndicator(formName, indicators[ind].P14),
+				}
 			}
 		}
-
 		setColumnWidth(t, statData)
-
 		t.Refresh()
 	})
 
@@ -157,12 +223,13 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 	scr.SetMinSize(tableSize)
 
 	window.SetContent(container.NewVBox(content, scr))
-	return window
+	window.Show()
 }
 
 // setColumnWidth set the columns width after fetching new data
 // depending on data len and splitting by \n
 func setColumnWidth(t *widget.Table, statData [][]string) {
+
 	for c := 0; c < len(statData[0]); c++ {
 		var maxLen int
 		for r := 0; r < len(statData); r++ {

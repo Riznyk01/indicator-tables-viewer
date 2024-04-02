@@ -10,6 +10,7 @@ type Viewing interface {
 	GetHeader(tableName string) ([]string, error)
 	GetIndicatorNumbers(tableName string) ([]models.IndicatorData, error)
 	GetIndicator(shifr, npokaz string) string
+	GetColNameLocation(tableName string) (string, error)
 }
 
 type Repository struct {

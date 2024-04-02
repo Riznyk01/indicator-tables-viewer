@@ -43,7 +43,7 @@ type IndicatorDataFirebird struct {
 
 func (v *ViewingFirebird) GetTable() ([]string, error) {
 	var tableNames []string
-	rows, err := v.db.Query("SELECT tabl, nazv FROM STABLES WHERE tabl LIKE  'P%'")
+	rows, err := v.db.Query("SELECT tabl, nazv FROM STABLES WHERE tabl LIKE  'P%' ORDER BY tabl")
 	if err != nil {
 		log.Println("Error querying database:", err)
 		return nil, err
@@ -66,6 +66,20 @@ func (v *ViewingFirebird) GetTable() ([]string, error) {
 	return tableNames, nil
 }
 
+// GetColNameLocation ...
+func (v *ViewingFirebird) GetColNameLocation(tableName string) (string, error) {
+	fc := "GetColNameLocation"
+	var nameLocation string
+
+	query := "SELECT NSH FROM STABLES WHERE TABL = ?"
+	err := v.db.QueryRow(query, tableName).Scan(&nameLocation)
+	if err != nil {
+		log.Printf("%s error occurred while querying database: %v\n", fc, err)
+		return "", err
+	}
+	return nameLocation, nil
+}
+
 // GetHeader ...
 func (v *ViewingFirebird) GetHeader(tableName string) ([]string, error) {
 	fc := "GetHeader"
@@ -80,17 +94,24 @@ func (v *ViewingFirebird) GetHeader(tableName string) ([]string, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var column string
+		var columnStr string
+		var column sql.NullString
 		if err := rows.Scan(&column); err != nil {
 			log.Printf("%s error occurred while scanning rows: %v", fc, err)
 			return nil, err
 		}
-		tableCols = append(tableCols, column)
+		if !column.Valid {
+			columnStr = "name is empty"
+		} else {
+			columnStr = column.String
+		}
+		tableCols = append(tableCols, columnStr)
 	}
 	if err := rows.Err(); err != nil {
 		log.Printf("%s error occurred while iterating over rows: %v", fc, err)
 		return nil, err
 	}
+	fmt.Printf("%s: header is fetched: %s\n", fc, tableCols)
 	return tableCols, nil
 }
 
@@ -101,9 +122,8 @@ func (v *ViewingFirebird) GetIndicatorNumbers(tableName string) ([]models.Indica
 
 	query := "SELECT * FROM PMAKET WHERE TABL = ?"
 	rows, err := v.db.Query(query, tableName)
-
 	if err != nil {
-		log.Printf("%s error occurred while querying database: %v\n", fc, err)
+		log.Printf("%s: %v\n", fc, err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -140,23 +160,24 @@ func (v *ViewingFirebird) GetIndicatorNumbers(tableName string) ([]models.Indica
 		log.Printf("%s error occurred while iterating over rows: %v\n", fc, err)
 		return nil, err
 	}
-	log.Printf("the indicators' numbers fetched from the DB are: %v\n", indicatorsRowsFirebird)
-	return handleNullString(indicatorsRowsFirebird), nil
+	log.Printf("%s: the indicators' numbers fetched from the DB are: %v\n", fc, indicatorsRowsFirebird)
+	IndicatorNumbers := handleNullString(indicatorsRowsFirebird)
+	return IndicatorNumbers, nil
 }
 
 // GetIndicator ...
 func (v *ViewingFirebird) GetIndicator(shifr, npokaz string) string {
 	fc := "GetIndicator"
 
-	if npokaz == "" {
-		return ""
+	if npokaz == "empty" {
+		return "empty"
 	}
 	var mnojitNum int
 	var ngrup, chislit, znamet, mnojitStr string
 	query := "SELECT NGRUP, CHISLIT, ZNAMET, MNOJIT FROM SPPOK WHERE SHIFR = ? AND NPOKAZ = ?"
 	err := v.db.QueryRow(query, shifr, npokaz).Scan(&ngrup, &chislit, &znamet, &mnojitNum)
 	if err != nil {
-		log.Printf("%s error occurred while querying database: %v\n", fc, err)
+		log.Printf("%s: %v\n", fc, err)
 		return ""
 	}
 
@@ -174,106 +195,106 @@ func (v *ViewingFirebird) GetIndicator(shifr, npokaz string) string {
 }
 
 func handleNullString(indicatorsNumbers []IndicatorDataFirebird) []models.IndicatorData {
+	fc := "handleNullString"
 	processedData := make([]models.IndicatorData, len(indicatorsNumbers))
 
 	for i, numbersRow := range indicatorsNumbers {
+		log.Printf("%s: %v", fc, numbersRow)
 		processedRow := models.IndicatorData{}
-		numbersRow.TABL = processedRow.TABL
-		numbersRow.NZAP = processedRow.NZAP
-
+		processedRow.TABL = numbersRow.TABL
+		processedRow.NZAP = numbersRow.NZAP
 		if !numbersRow.STRTAB.Valid {
-			processedRow.STRTAB = ""
+			processedRow.STRTAB = "empty"
 		} else {
 			processedRow.STRTAB = numbersRow.STRTAB.String
 		}
-
 		if !numbersRow.SHSTR.Valid {
-			processedRow.SHSTR = ""
+			processedRow.SHSTR = "empty"
 		} else {
 			processedRow.SHSTR = numbersRow.SHSTR.String
 		}
 		if !numbersRow.FORMA.Valid {
-			processedRow.FORMA = ""
+			processedRow.FORMA = "empty"
 		} else {
 			processedRow.FORMA = numbersRow.FORMA.String
 		}
 		if !numbersRow.STROKA.Valid {
-			processedRow.STROKA = ""
+			processedRow.STROKA = "empty"
 		} else {
 			processedRow.STROKA = numbersRow.STROKA.String
 		}
 		if !numbersRow.P1.Valid {
-			processedRow.P1 = ""
+			processedRow.P1 = "empty"
 		} else {
 			processedRow.P1 = numbersRow.P1.String
 		}
 		if !numbersRow.P2.Valid {
-			processedRow.P2 = ""
+			processedRow.P2 = "empty"
 		} else {
 			processedRow.P2 = numbersRow.P2.String
 		}
 		if !numbersRow.P3.Valid {
-			processedRow.P3 = ""
+			processedRow.P3 = "empty"
 		} else {
 			processedRow.P3 = numbersRow.P3.String
 		}
 		if !numbersRow.P4.Valid {
-			processedRow.P4 = ""
+			processedRow.P4 = "empty"
 		} else {
 			processedRow.P4 = numbersRow.P4.String
 		}
 		if !numbersRow.P5.Valid {
-			processedRow.P5 = ""
+			processedRow.P5 = "empty"
 		} else {
 			processedRow.P5 = numbersRow.P5.String
 		}
 		if !numbersRow.P6.Valid {
-			processedRow.P6 = ""
+			processedRow.P6 = "empty"
 		} else {
 			processedRow.P6 = numbersRow.P6.String
 		}
 		if !numbersRow.P7.Valid {
-			processedRow.P7 = ""
+			processedRow.P7 = "empty"
 		} else {
 			processedRow.P7 = numbersRow.P7.String
 		}
 		if !numbersRow.P8.Valid {
-			processedRow.P8 = ""
+			processedRow.P8 = "empty"
 		} else {
 			processedRow.P8 = numbersRow.P8.String
 		}
 		if !numbersRow.P9.Valid {
-			processedRow.P9 = ""
+			processedRow.P9 = "empty"
 		} else {
 			processedRow.P9 = numbersRow.P9.String
 		}
 		if !numbersRow.P10.Valid {
-			processedRow.P10 = ""
+			processedRow.P10 = "empty"
 		} else {
 			processedRow.P10 = numbersRow.P10.String
 		}
 		if !numbersRow.P11.Valid {
-			processedRow.P11 = ""
+			processedRow.P11 = "empty"
 		} else {
 			processedRow.P11 = numbersRow.P11.String
 		}
 		if !numbersRow.P12.Valid {
-			processedRow.P12 = ""
+			processedRow.P12 = "empty"
 		} else {
 			processedRow.P12 = numbersRow.P12.String
 		}
 		if !numbersRow.P13.Valid {
-			processedRow.P13 = ""
+			processedRow.P13 = "empty"
 		} else {
 			processedRow.P13 = numbersRow.P13.String
 		}
 		if !numbersRow.P14.Valid {
-			processedRow.P14 = ""
+			processedRow.P14 = "empty"
 		} else {
 			processedRow.P14 = numbersRow.P14.String
 		}
 		processedData[i] = processedRow
 	}
-	log.Printf("the indicators' numbers after processing NULLs are: %v\n", processedData)
+	log.Printf("%s: the indicators' numbers after processing NULLs are: %v\n", fc, processedData)
 	return processedData
 }

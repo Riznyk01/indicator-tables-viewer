@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/go-vgo/robotgo"
 	_ "github.com/nakagami/firebirdsql"
 	"indicator-tables-viewer/internal/config"
 	"indicator-tables-viewer/internal/repository"
@@ -160,10 +161,13 @@ func loadRecourseFromPath(path string) (Resource, error) {
 func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Config) { //fyne.Window {
 	log.Printf("Main window is started")
 	statData := newData()
-	windowSize := fyne.NewSize(cfg.WindowWidth, cfg.WindowHeight)
-	tableSize := fyne.NewSize(cfg.WindowWidth, cfg.WindowHeight)
+	//width, height := robotgo.GetScreenSize()
+	w, h := setResolution()
+	windowSize := fyne.NewSize(w, h)
+	tableSize := fyne.NewSize(w, h)
 
 	window := app.NewWindow("Indicator tables viewer")
+	window.FullScreen()
 	window.Resize(windowSize)
 	window.SetMaster()
 	tablesList, _ := repo.GetTable()
@@ -193,20 +197,20 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 		if len(indicators) != 0 {
 			for ind, _ := range indicators {
 				statData[ind+1] = []string{
-					repo.GetIndicator(formName, indicators[ind].P1),
-					repo.GetIndicator(formName, indicators[ind].P2),
-					repo.GetIndicator(formName, indicators[ind].P3),
-					repo.GetIndicator(formName, indicators[ind].P4),
-					repo.GetIndicator(formName, indicators[ind].P5),
-					repo.GetIndicator(formName, indicators[ind].P6),
-					repo.GetIndicator(formName, indicators[ind].P7),
-					repo.GetIndicator(formName, indicators[ind].P8),
-					repo.GetIndicator(formName, indicators[ind].P9),
-					repo.GetIndicator(formName, indicators[ind].P10),
-					repo.GetIndicator(formName, indicators[ind].P11),
-					repo.GetIndicator(formName, indicators[ind].P12),
-					repo.GetIndicator(formName, indicators[ind].P13),
-					repo.GetIndicator(formName, indicators[ind].P14),
+					repo.GetIndicator(formName, indicators[ind].P1, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P2, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P3, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P4, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P5, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P6, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P7, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P8, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P9, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P10, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P11, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P12, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P13, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
+					repo.GetIndicator(formName, indicators[ind].P14, indicators[ind].STRTAB, indicators[ind].SHSTR, indicators[ind].NZAP),
 				}
 			}
 		}
@@ -290,7 +294,7 @@ func newData() [][]string {
 }
 
 func newTable(statData [][]string) *widget.Table {
-	tbl := widget.NewTableWithHeaders(
+	tbl := widget.NewTable(
 		func() (int, int) {
 			return len(statData), len(statData[0])
 		},
@@ -303,4 +307,16 @@ func newTable(statData [][]string) *widget.Table {
 		},
 	)
 	return tbl
+}
+
+func setResolution() (w, h float32) {
+	width, height := robotgo.GetScreenSize()
+	if width > 1920 && height > 1080 {
+		w = 0.5 * float32(width)
+		h = 0.4 * float32(height)
+		return w, h
+	}
+	w = 0.8 * float32(width)
+	h = 0.8 * float32(height)
+	return w, h
 }

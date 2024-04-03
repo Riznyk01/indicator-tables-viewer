@@ -166,7 +166,7 @@ func (v *ViewingFirebird) GetIndicatorNumbers(tableName string) ([]models.Indica
 }
 
 // GetIndicator ...
-func (v *ViewingFirebird) GetIndicator(shifr, npokaz string) string {
+func (v *ViewingFirebird) GetIndicator(shifr, npokaz, indicatorsRow, decodingRow, decodingTable string) string {
 	fc := "GetIndicator"
 
 	if npokaz == "empty" {
@@ -191,7 +191,19 @@ func (v *ViewingFirebird) GetIndicator(shifr, npokaz string) string {
 		mnojitStr = strconv.Itoa(mnojitNum)
 	}
 
-	return fmt.Sprintf("#%s (NGRUP: %s)\n (%s)*%s/\n(%s)", npokaz, ngrup, chislit, mnojitStr, znamet)
+	if mnojitStr != "1" {
+		mnojitStr = fmt.Sprintf("множник %s", mnojitStr)
+	} else {
+		mnojitStr = ""
+	}
+
+	if znamet != "1" {
+		znamet = fmt.Sprintf("знаменник %s", znamet)
+	} else {
+		znamet = ""
+	}
+
+	return fmt.Sprintf("ГР%s №%s рядок табл. показника %s\nрядок розшифровки. %s з табл. %s\nчисельник %s\n%s\n%s", ngrup, npokaz, indicatorsRow, decodingRow, decodingTable, chislit, mnojitStr, znamet)
 }
 
 func handleNullString(indicatorsNumbers []IndicatorDataFirebird) []models.IndicatorData {

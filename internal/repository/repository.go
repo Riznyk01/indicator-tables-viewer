@@ -9,7 +9,7 @@ type Viewing interface {
 	GetTable() ([]string, error)
 	GetHeader(tableName string) ([]string, error)
 	GetIndicatorNumbers(tableName string) ([]models.IndicatorData, error)
-	GetIndicator(shifr, npokaz string) string
+	GetIndicator(shifr, npokaz, indicatorsRow, decodingRow, decodingTable string) string
 	GetColNameLocation(tableName string) (string, error)
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -46,6 +47,10 @@ func (r *StaticResource) Content() []byte {
 }
 
 func main() {
+	pathPtr := flag.String("path", "", "the path to the file")
+	flag.Parse()
+	fmt.Printf("path flag: %v\n", *pathPtr)
+
 	//logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	//if err != nil {
 	//	log.Fatal("error occurred while opening logfile:", err)
@@ -62,7 +67,7 @@ func main() {
 	sizer := newTermTheme()
 	a.Settings().SetTheme(sizer)
 
-	cfg := config.MustLoad()
+	cfg := config.MustLoad(*pathPtr)
 
 	login := a.NewWindow("Login Form")
 
@@ -91,7 +96,7 @@ func main() {
 		log.Printf("Trimmed path: %s\n", folderPath[2:])
 		cfg.Path = "D:/s" + folderPath[2:]
 		dbPath.SetText(cfg.Path + "/" + cfg.DBName)
-		config.UpdatePath(cfg, cfg.Path)
+		config.UpdateDBPath(cfg, cfg.Path, *pathPtr)
 		if err != nil {
 			log.Printf("error occurred while updating th config file: %v", err)
 		}

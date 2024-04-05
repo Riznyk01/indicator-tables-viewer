@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-var configPath = "config/config_2.toml"
-
 type Config struct {
 	Host         string        `toml:"host"`
 	Port         string        `toml:"port"`
@@ -23,7 +21,7 @@ type Config struct {
 	InfoTimeout  time.Duration `toml:"info_timeout"`
 }
 
-func MustLoad() *Config {
+func MustLoad(configPath string) *Config {
 
 	// check if file exists
 	cfg, err := toml.LoadFile(configPath)
@@ -37,12 +35,14 @@ func MustLoad() *Config {
 		log.Fatalf("error decoding config: %s", err)
 	}
 
+	log.Printf("config values: %v", config)
+
 	return &config
 }
 
 // UpdatePath updates the config file on the disk if it has been changed
-func UpdatePath(config *Config, newPath string) error {
-	config.Path = newPath
+func UpdateDBPath(config *Config, newDBPath, configPath string) error {
+	config.Path = newDBPath
 
 	file, err := os.OpenFile(configPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {

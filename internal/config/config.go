@@ -4,21 +4,23 @@ import (
 	"github.com/pelletier/go-toml"
 	"log"
 	"os"
+	"time"
 )
 
 var configPath = "config/config_2.toml"
 
 type Config struct {
-	Host         string  `toml:"host"`
-	Port         string  `toml:"port"`
-	Path         string  `toml:"path"`
-	Username     string  `toml:"username"`
-	DBName       string  `toml:"db_name"`
-	Password     string  `toml:"password"`
-	HeaderHeight float32 `toml:"header_row_height"`
-	RowHeight    float32 `toml:"row_height"`
-	WindowHeight float32 `toml:"window_height"`
-	WindowWidth  float32 `toml:"window_width"`
+	Host         string        `toml:"host"`
+	Port         string        `toml:"port"`
+	Path         string        `toml:"path"`
+	Username     string        `toml:"username"`
+	DBName       string        `toml:"db_name"`
+	Password     string        `toml:"password"`
+	HeaderHeight float32       `toml:"header_row_height"`
+	RowHeight    float32       `toml:"row_height"`
+	WindowHeight float32       `toml:"window_height"`
+	WindowWidth  float32       `toml:"window_width"`
+	InfoTimeout  time.Duration `toml:"info_timeout"`
 }
 
 func MustLoad() *Config {

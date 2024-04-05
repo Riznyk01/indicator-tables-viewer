@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -9,12 +10,14 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/go-vgo/robotgo"
 	_ "github.com/nakagami/firebirdsql"
+	"github.com/tealeg/xlsx"
 	"indicator-tables-viewer/internal/config"
 	"indicator-tables-viewer/internal/repository"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type Resource interface {
@@ -161,7 +164,7 @@ func loadRecourseFromPath(path string) (Resource, error) {
 func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Config) { //fyne.Window {
 	log.Printf("Main window is started")
 	statData := newData()
-	//width, height := robotgo.GetScreenSize()
+
 	w, h := setResolution()
 	windowSize := fyne.NewSize(w, h)
 	tableSize := fyne.NewSize(w, h)
@@ -218,15 +221,31 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 		t.Refresh()
 	})
 
-	content := container.NewVBox(
+	info := widget.NewLabel("")
+
+	exportFileButton := widget.NewButton("export to excel", func() {
+		err := exportToExcel(statData)
+		if err != nil {
+			info.SetText(err.Error())
+			<-time.After(cfg.InfoTimeout)
+			info.SetText("")
+		} else {
+			info.SetText("file saved successfully")
+			<-time.After(cfg.InfoTimeout)
+			info.SetText("")
+		}
+	})
+
+	horizontalContent := container.NewHBox(
 		widget.NewLabel("select an indicators table for view:"),
 		dropdown,
+		exportFileButton,
 	)
 
 	scr := container.NewVScroll(t)
 	scr.SetMinSize(tableSize)
 
-	window.SetContent(container.NewVBox(content, scr))
+	window.SetContent(container.NewVBox(horizontalContent, scr, info))
 	window.Show()
 }
 
@@ -319,4 +338,34 @@ func setResolution() (w, h float32) {
 	w = 0.8 * float32(width)
 	h = 0.8 * float32(height)
 	return w, h
+}
+
+func exportToExcel(data [][]string) error {
+	file := xlsx.NewFile()
+	sheet, err := file.AddSheet("Sheet1")
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error creating sheet: %v\n", err))
+	}
+
+	for _, row := range data {
+		newRow := sheet.AddRow()
+		for _, cell := range row {
+			newCell := newRow.AddCell()
+			if cell == "empty" {
+				cell = ""
+			}
+			newCell.Value = cell
+		}
+	}
+
+	log.Println("File saved successfully.")
+	for s := 0; s < sheet.MaxCol; s++ {
+		sheet.Col(s).Width = float64(30)
+	}
+
+	err = file.Save("output.xlsx")
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error saving file: %v\n", err))
+	}
+	return nil
 }

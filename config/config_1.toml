@@ -1,9 +1,0 @@
-host = "localhost"
-port = "3050"
-path = "C:/tmp"
-username = "sysdba"
-db_name =   "MEDSTAT.GDB"
-password = "masterkey"
-header_row_height = 180.0
-row_height = 80.0
-info_timeout = 2500000000

@@ -47,10 +47,16 @@ func (r *StaticResource) Content() []byte {
 }
 
 func main() {
+	cfgPath := "config/config_prod.toml"
+
 	pathPtr := flag.String("path", "", "the path to the file")
 	flag.Parse()
 	fmt.Printf("path flag: %v\n", *pathPtr)
 
+	if *pathPtr != "" {
+		cfgPath = *pathPtr
+	}
+	log.Printf("the path of the config is: %s", cfgPath)
 	//logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	//if err != nil {
 	//	log.Fatal("error occurred while opening logfile:", err)
@@ -67,7 +73,7 @@ func main() {
 	sizer := newTermTheme()
 	a.Settings().SetTheme(sizer)
 
-	cfg := config.MustLoad(*pathPtr)
+	cfg := config.MustLoad(cfgPath)
 
 	login := a.NewWindow("Login Form")
 

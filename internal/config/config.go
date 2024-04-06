@@ -35,7 +35,7 @@ func MustLoad(configPath string) *Config {
 		log.Fatalf("error decoding config: %s", err)
 	}
 
-	log.Printf("config values: %v", config)
+	log.Printf("the config values: %v", config)
 
 	return &config
 }

@@ -102,7 +102,7 @@ func main() {
 		log.Printf("Trimmed path: %s\n", folderPath[2:])
 		cfg.Path = "D:/s" + folderPath[2:]
 		dbPath.SetText(cfg.Path + "/" + cfg.DBName)
-		config.UpdateDBPath(cfg, cfg.Path, *pathPtr)
+		config.UpdateDBPath(cfg, cfg.Path, cfgPath)
 		if err != nil {
 			log.Printf("error occurred while updating th config file: %v", err)
 		}
@@ -174,6 +174,7 @@ func loadRecourseFromPath(path string) (Resource, error) {
 
 func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Config) { //fyne.Window {
 	log.Printf("Main window is started")
+	var tableName string
 	statData := newData()
 
 	w, h := setResolution()
@@ -195,7 +196,7 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 	}
 
 	dropdown := widget.NewSelect(tablesList, func(selected string) {
-		tableName := selected[:7]
+		tableName = selected[:7]
 		formName := "F" + selected[1:3]
 		log.Printf("%s selected", tableName)
 		log.Printf("%s selected", formName)
@@ -235,7 +236,7 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 	info := widget.NewLabel("")
 
 	exportFileButton := widget.NewButton("export to excel", func() {
-		err := exportToExcel(statData)
+		err := exportToExcel(statData, tableName)
 		if err != nil {
 			info.SetText(err.Error())
 			<-time.After(cfg.InfoTimeout)
@@ -351,7 +352,7 @@ func setResolution() (w, h float32) {
 	return w, h
 }
 
-func exportToExcel(data [][]string) error {
+func exportToExcel(data [][]string, tableName string) error {
 	file := xlsx.NewFile()
 	sheet, err := file.AddSheet("Sheet1")
 	if err != nil {
@@ -374,7 +375,10 @@ func exportToExcel(data [][]string) error {
 		sheet.Col(s).Width = float64(30)
 	}
 
-	err = file.Save("output.xlsx")
+	currentTime := time.Now()
+	currentDateTime := currentTime.Format("2006-01-02_15-04-05")
+	filename := tableName + "_" + currentDateTime + ".xlsx"
+	err = file.Save(filename)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error saving file: %v\n", err))
 	}

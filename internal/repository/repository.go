@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"indicator-tables-viewer/internal/models"
+	"time"
 )
 
 type Viewing interface {
@@ -11,6 +12,7 @@ type Viewing interface {
 	GetIndicatorNumbers(tableName string) ([]models.IndicatorData, error)
 	GetIndicator(shifr, npokaz, indicatorsRow, decodingRow, decodingTable string) string
 	GetColNameLocation(tableName string) (string, error)
+	UpdateDBCorrectionDate(currentTime time.Time) error
 }
 
 type Repository struct {

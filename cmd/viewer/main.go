@@ -57,12 +57,12 @@ func main() {
 		cfgPath = *pathPtr
 	}
 	log.Printf("the path of the config is: %s", cfgPath)
-	//logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	//if err != nil {
-	//	log.Fatal("error occurred while opening logfile:", err)
-	//}
-	//defer logFile.Close()
-	////log.SetOutput(logFile)
+	logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal("error occurred while opening logfile:", err)
+	}
+	defer logFile.Close()
+	log.SetOutput(logFile)
 	//log.SetOutput(os.Stdout)
 
 	a := app.New()
@@ -188,12 +188,10 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 	tablesList, _ := repo.GetTable()
 
 	t := newTable(statData)
-	// set the header height
-	t.SetRowHeight(0, cfg.HeaderHeight)
-	// set the data rows height
-	for row := 1; row < len(statData); row++ {
-		t.SetRowHeight(row, cfg.RowHeight)
-	}
+	//// set the data rows height
+	//for row := 1; row < len(statData); row++ {
+	//	t.SetRowHeight(row, cfg.RowHeight)
+	//}
 
 	dropdown := widget.NewSelect(tablesList, func(selected string) {
 		tableName = selected[:7]
@@ -202,9 +200,14 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 		log.Printf("%s selected", formName)
 		// get where columns names is located
 		colNameLocation, _ := repo.GetColNameLocation(tableName)
-		// get the tables` header
+		// get the tables' header
 		statData[0], _ = repo.GetHeader(colNameLocation)
+
 		lineSplit(statData)
+		// set the headers' height
+		headerHeight := rowHeightCount(statData[0])
+		t.SetRowHeight(0, headerHeight)
+
 		indicators, _ := repo.GetIndicatorNumbers(tableName)
 		for m := 1; m < len(statData); m++ {
 			statData[m] = []string{"empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty"}
@@ -229,6 +232,14 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 				}
 			}
 		}
+
+		// set the data rows height
+		for rows := 1; rows < len(statData); rows++ {
+			// set the row height
+			rowHeight := rowHeightCount(statData[rows])
+			t.SetRowHeight(rows, rowHeight)
+		}
+
 		setColumnWidth(t, statData)
 		t.Refresh()
 	})
@@ -248,10 +259,24 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 		}
 	})
 
+	updateDateButton := widget.NewButton("update DB correction date", func() {
+		err := repo.UpdateDBCorrectionDate(time.Now())
+		if err != nil {
+			info.SetText(err.Error())
+			<-time.After(cfg.InfoTimeout)
+			info.SetText("")
+		} else {
+			info.SetText("date updated successfully")
+			<-time.After(cfg.InfoTimeout)
+			info.SetText("")
+		}
+	})
+
 	horizontalContent := container.NewHBox(
 		widget.NewLabel("select an indicators table for view:"),
 		dropdown,
 		exportFileButton,
+		updateDateButton,
 	)
 
 	scr := container.NewVScroll(t)
@@ -259,6 +284,22 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 
 	window.SetContent(container.NewVBox(horizontalContent, scr, info))
 	window.Show()
+}
+
+func rowHeightCount(rowToCount []string) float32 {
+	count := 0
+	for _, field := range rowToCount {
+		q := strings.Count(field, "\n")
+		if q > count {
+			count = q
+		}
+		log.Printf("the filed to count is: %v, the field len is: %v\n", count, len(field))
+	}
+	log.Printf("quanity of the \\n is: %v\n", count)
+	if count == 0 {
+		return 24
+	}
+	return float32(count) * 24
 }
 
 // setColumnWidth set the columns width after fetching new data
@@ -277,6 +318,7 @@ func setColumnWidth(t *widget.Table, statData [][]string) {
 	}
 }
 
+// lineSplit adds the "\n" to the headers' rows
 func lineSplit(data [][]string) {
 	every := 7
 	for n, colName := range data[0] {
@@ -312,7 +354,7 @@ func maxLengthAfterSplit(str string) int {
 }
 
 func newData() [][]string {
-	rows := 200
+	rows := 150
 	data := make([][]string, rows)
 	for i := 0; i < rows; i++ {
 		row := make([]string, 14)

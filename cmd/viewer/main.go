@@ -61,8 +61,21 @@ func main() {
 		log.Fatal("error occurred while opening logfile:", err)
 	}
 	defer logFile.Close()
-	log.SetOutput(logFile)
-	//log.SetOutput(os.Stdout)
+	//log.SetOutput(logFile)
+	log.SetOutput(os.Stdout)
+
+	cfg := config.MustLoad(cfgPath)
+
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Println("error occurred while receiving exe file:", err)
+		return
+	}
+
+	exeDir := filepath.Dir(exePath)
+	log.Println("the dir to the exe file:", exeDir)
+
+	cfg.LocalPath = exeDir
 
 	a := app.New()
 
@@ -72,32 +85,97 @@ func main() {
 	sizer := newTermTheme()
 	a.Settings().SetTheme(sizer)
 
-	cfg := config.MustLoad(cfgPath)
-
 	login := a.NewWindow("Login Form")
 
-	usernameText := widget.NewLabel("username: ")
+	credText := widget.NewLabel("username/password: ")
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetText(cfg.Username)
-	usernameEntry.SetPlaceHolder("Username")
+	usernameEntry.SetPlaceHolder("username")
 
-	passwordText := widget.NewLabel("password: ")
+	//	passwordText := widget.NewLabel("password: ")
 	passwordEntry := widget.NewPasswordEntry()
 	passwordEntry.SetText(cfg.Password)
-	passwordEntry.SetPlaceHolder("Password")
+	passwordEntry.SetPlaceHolder("password")
 
-	//username := container.NewHBox(
-	//	usernameText,
-	//	usernameEntry,
-	//)
+	settings := a.NewWindow("connection settings")
+	settings.Resize(fyne.NewSize(300, 100))
+	settings.CenterOnScreen()
 
-	username := container.NewGridWithColumns(4, usernameText, usernameEntry, widget.NewLabel(""))
-	//password := container.NewHBox(
-	//	passwordText,
-	//	passwordEntry,
-	//)
+	dbName := widget.NewEntry()
+	dbName.SetText(cfg.DBName)
+	dbNameCols := container.NewGridWithColumns(2, widget.NewLabel("db name: "), dbName)
 
-	password := container.NewGridWithColumns(4, passwordText, passwordEntry, widget.NewLabel(""))
+	usernameSettings := widget.NewEntry()
+	usernameSettings.SetText(cfg.Username)
+	usernameSettingsCols := container.NewGridWithColumns(2, widget.NewLabel("username: "), usernameSettings)
+
+	remoteHost := widget.NewEntry()
+	remoteHost.SetText(cfg.Host)
+	remoteHostCols := container.NewGridWithColumns(3, widget.NewLabel("remote db "), widget.NewLabel("host: "), remoteHost)
+
+	remotePort := widget.NewEntry()
+	remotePort.SetText(cfg.Port)
+	remotePortCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("port: "), remotePort)
+
+	remotePath := widget.NewEntry()
+	remotePath.SetText(cfg.Path)
+	remotePathCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("path: "), remotePath)
+
+	remotePass := widget.NewEntry()
+	remotePass.SetText(cfg.Password)
+	remotePassCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("pass: "), remotePass)
+
+	localHost := widget.NewEntry()
+	localHost.SetText(cfg.LocalHost)
+	localHostCols := container.NewGridWithColumns(3, widget.NewLabel("local db "), widget.NewLabel("host: "), localHost)
+
+	localPort := widget.NewEntry()
+	localPort.SetText(cfg.LocalPort)
+	localPortCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("port: "), localPort)
+
+	localPath := widget.NewEntry()
+	localPath.SetText(cfg.LocalPath)
+	localPathCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("path: "), localPath)
+
+	localPass := widget.NewEntry()
+	localPass.SetText(cfg.LocalPassword)
+	localPassCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("pass: "), localPass)
+
+	infoTimeout := widget.NewEntry()
+	infoTimeout.SetText(fmt.Sprintf("%v", cfg.InfoTimeout))
+	infoTimeoutCols := container.NewGridWithColumns(3, widget.NewLabel("other settings "), widget.NewLabel("info timeout: "), infoTimeout)
+
+	headerHeight := widget.NewEntry()
+	headerHeight.SetText(fmt.Sprintf("%v", cfg.HeaderHeight))
+	headerHeightCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("header height: "), headerHeight)
+
+	rowHeight := widget.NewEntry()
+	rowHeight.SetText(fmt.Sprintf("%v", cfg.RowHeight))
+	rowHeightCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("row height: "), rowHeight)
+
+	settingsRows := container.NewGridWithRows(13,
+		dbNameCols,
+		usernameSettingsCols,
+		remoteHostCols,
+		remotePortCols,
+		remotePathCols,
+		remotePassCols,
+		localHostCols,
+		localPortCols,
+		localPathCols,
+		localPassCols,
+		infoTimeoutCols,
+		headerHeightCols,
+		rowHeightCols)
+
+	settings.SetContent(settingsRows)
+
+	settingsButton := widget.NewButton("settings", func() {
+		settings.Show()
+	})
+
+	username := container.NewGridWithColumns(4, credText, usernameEntry, passwordEntry, settingsButton)
+	//password := container.NewGridWithColumns(4, passwordText, passwordEntry, widget.NewLabel(""))
 
 	dbPath := widget.NewEntry()
 	dbPath.SetText(cfg.Path + "/" + cfg.DBName)
@@ -129,44 +207,47 @@ func main() {
 	//	fileChooser.Show()
 	//})
 
-	dbHost := widget.NewEntry()
-	dbHost.SetText(cfg.Host)
+	//dbHost := widget.NewEntry()
+	//dbHost.SetText(cfg.Host)
+	//
+	//dbPort := widget.NewEntry()
+	//dbPort.SetText(cfg.Port)
 
-	dbPort := widget.NewEntry()
-	dbPort.SetText(cfg.Port)
+	var localConnection bool
 
-	checkbox := widget.NewCheck("local (db in program folder)", func(checked bool) {
+	checkbox := widget.NewCheck("local db", func(checked bool) {
 		if checked {
-			dbHost.SetText("localhost")
+			localConnection = true
+			//dbHost.SetText("localhost")
 			dbPath.SetText("in program folder")
 		} else {
-			dbHost.SetText(cfg.Host)
+			localConnection = false
+			//dbHost.SetText(cfg.Host)
 			dbPath.SetText(cfg.Path)
 		}
 	})
 
 	errorLabel := widget.NewLabel("")
 	loginButton := widget.NewButton("login", func() {
-		db, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, dbHost.Text, dbPort.Text)
+		db, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, localConnection)
 		if err != nil {
 			log.Println(err)
 			errorLabel.SetText(err.Error())
 		} else {
 			login.Hide()
 			log.Printf("connected")
-			// TODO add cfg updating if connection successful
 			repo := repository.NewRepository(db)
 			newViewerWindow(a, repo, cfg)
 		}
 	})
 
-	buttonRow := container.NewGridWithColumns(3, checkbox, widget.NewLabel(""), loginButton)
-
-	dbPathRow := container.NewGridWithColumns(4, widget.NewLabel("DB:"), dbHost, dbPort, dbPath)
-	loginW := container.NewGridWithRows(5, username, password, dbPathRow, buttonRow, errorLabel)
+	//buttonRow := container.NewGridWithColumns(3, widget.NewLabel(""), , widget.NewLabel(""))
+	//dbPathRow := container.NewGridWithColumns(3, dbHost, dbPort, dbPath)
+	checkRow := container.NewGridWithColumns(3, checkbox, loginButton)
+	loginW := container.NewGridWithRows(3, username, checkRow, errorLabel)
 
 	login.SetContent(loginW)
-	login.Resize(fyne.NewSize(600, 100))
+	login.Resize(fyne.NewSize(400, 100))
 	login.CenterOnScreen()
 	login.Show()
 	a.Run()

@@ -8,17 +8,21 @@ import (
 )
 
 type Config struct {
-	Host         string        `toml:"host"`
-	Port         string        `toml:"port"`
-	Path         string        `toml:"path"`
-	Username     string        `toml:"username"`
-	DBName       string        `toml:"db_name"`
-	Password     string        `toml:"password"`
-	HeaderHeight float32       `toml:"header_row_height"`
-	RowHeight    float32       `toml:"row_height"`
-	WindowHeight float32       `toml:"window_height"`
-	WindowWidth  float32       `toml:"window_width"`
-	InfoTimeout  time.Duration `toml:"info_timeout"`
+	Username      string        `toml:"username"`
+	Host          string        `toml:"host"`
+	Port          string        `toml:"port"`
+	Path          string        `toml:"path"`
+	Password      string        `toml:"password"`
+	LocalHost     string        `toml:"host_local"`
+	LocalPort     string        `toml:"port_local"`
+	LocalPath     string        `toml:"path_local"`
+	LocalPassword string        `toml:"password_local"`
+	DBName        string        `toml:"db_name"`
+	HeaderHeight  float32       `toml:"header_row_height"`
+	RowHeight     float32       `toml:"row_height"`
+	WindowHeight  float32       `toml:"window_height"`
+	WindowWidth   float32       `toml:"window_width"`
+	InfoTimeout   time.Duration `toml:"info_timeout"`
 }
 
 func MustLoad(configPath string) *Config {
@@ -41,7 +45,7 @@ func MustLoad(configPath string) *Config {
 }
 
 // UpdatePath updates the config file on the disk if it has been changed
-func UpdateDBPath(config *Config, newDBPath, configPath string) error {
+func UpdateConfig(config *Config, newDBPath, configPath string, local bool) error {
 	config.Path = newDBPath
 
 	file, err := os.OpenFile(configPath, os.O_WRONLY|os.O_TRUNC, 0644)

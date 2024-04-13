@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/go-vgo/robotgo"
 	_ "github.com/nakagami/firebirdsql"
@@ -87,7 +88,6 @@ func main() {
 
 	login := a.NewWindow("Login Form")
 
-	credText := widget.NewLabel("username/password: ")
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetText(cfg.Username)
 	usernameEntry.SetPlaceHolder("username")
@@ -174,65 +174,29 @@ func main() {
 		settings.Show()
 	})
 
-	username := container.NewGridWithColumns(4, credText, usernameEntry, passwordEntry, settingsButton)
-	//password := container.NewGridWithColumns(4, passwordText, passwordEntry, widget.NewLabel(""))
+	username := container.NewGridWithColumns(4, widget.NewLabel(""), usernameEntry, passwordEntry, widget.NewLabel(""))
 
 	dbPath := widget.NewEntry()
 	dbPath.SetText(cfg.Path + "/" + cfg.DBName)
-	//dbPath := widget.NewLabel(cfg.Path + "/" + cfg.DBName)
-	//dbPathText := widget.NewLabel("Path to DB:")
-	//fileChooser := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
-	//	if err != nil {
-	//		log.Println("Error opening file:", err)
-	//		return
-	//	}
-	//	if reader == nil {
-	//		log.Println("No file selected")
-	//		return
-	//	}
-	//	filePath := reader.URI().Path()
-	//	folderPath := filepath.Dir(filePath)
-	//	log.Printf("The DB path is selected: %s\n", folderPath)
-	//	log.Printf("Trimmed path: %s\n", folderPath[2:])
-	//	cfg.Path = "D:/s" + folderPath[2:]
-	//	//dbPath.SetText(cfg.Path + "/" + cfg.DBName)
-	//
-	//	config.UpdateDBPath(cfg, cfg.Path, cfgPath)
-	//	if err != nil {
-	//		log.Printf("error occurred while updating th config file: %v", err)
-	//	}
-	//}, login)
-
-	//selectFileButton := widget.NewButton("Select DB", func() {
-	//	fileChooser.Show()
-	//})
-
-	//dbHost := widget.NewEntry()
-	//dbHost.SetText(cfg.Host)
-	//
-	//dbPort := widget.NewEntry()
-	//dbPort.SetText(cfg.Port)
 
 	var localConnection bool
 
 	checkbox := widget.NewCheck("local db", func(checked bool) {
 		if checked {
 			localConnection = true
-			//dbHost.SetText("localhost")
 			dbPath.SetText("in program folder")
 		} else {
 			localConnection = false
-			//dbHost.SetText(cfg.Host)
 			dbPath.SetText(cfg.Path)
 		}
 	})
 
-	errorLabel := widget.NewLabel("")
 	loginButton := widget.NewButton("login", func() {
 		db, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, localConnection)
 		if err != nil {
 			log.Println(err)
-			errorLabel.SetText(err.Error())
+			errDialog := dialog.NewInformation("error", err.Error(), login)
+			errDialog.Show()
 		} else {
 			login.Hide()
 			log.Printf("connected")
@@ -241,13 +205,13 @@ func main() {
 		}
 	})
 
-	//buttonRow := container.NewGridWithColumns(3, widget.NewLabel(""), , widget.NewLabel(""))
-	//dbPathRow := container.NewGridWithColumns(3, dbHost, dbPort, dbPath)
-	checkRow := container.NewGridWithColumns(3, checkbox, loginButton)
-	loginW := container.NewGridWithRows(3, username, checkRow, errorLabel)
+	checkRow := container.NewGridWithColumns(3, widget.NewLabel(""), loginButton, widget.NewLabel(""))
+	settingsRow := container.NewGridWithColumns(5, widget.NewLabel(""), widget.NewLabel(""), widget.NewLabel(""), checkbox, settingsButton)
+	textRow := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel("username"), widget.NewLabel("password"), widget.NewLabel(""))
+	loginW := container.NewGridWithRows(6, textRow, username, checkRow, widget.NewLabel(""), widget.NewLabel(""), settingsRow)
 
 	login.SetContent(loginW)
-	login.Resize(fyne.NewSize(400, 100))
+	login.Resize(fyne.NewSize(1000, 100))
 	login.CenterOnScreen()
 	login.Show()
 	a.Run()

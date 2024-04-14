@@ -44,9 +44,8 @@ func MustLoad(configPath string) *Config {
 	return &config
 }
 
-// UpdatePath updates the config file on the disk if it has been changed
-func UpdateConfig(config *Config, newDBPath, configPath string, local bool) error {
-	config.Path = newDBPath
+// UpdateConfig updates the config file on the disk
+func UpdateConfig(config Config, configPath string) error {
 
 	file, err := os.OpenFile(configPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
@@ -55,7 +54,7 @@ func UpdateConfig(config *Config, newDBPath, configPath string, local bool) erro
 	defer file.Close()
 
 	encoder := toml.NewEncoder(file)
-	if err = encoder.Encode(*config); err != nil {
+	if err = encoder.Encode(config); err != nil {
 		return err
 	}
 

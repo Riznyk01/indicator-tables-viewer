@@ -191,6 +191,10 @@ func main() {
 		} else {
 			successDialog := dialog.NewInformation("settings", "config has been changed", settings)
 			successDialog.Show()
+			cfg = config.MustLoad(cfgPath)
+
+			usernameEntry.SetText(cfg.Username)
+			passwordEntry.SetText(cfg.Password)
 		}
 
 	})
@@ -222,20 +226,33 @@ func main() {
 	dbPath := widget.NewEntry()
 	dbPath.SetText(cfg.Path + "/" + cfg.DBName)
 
-	var localConnection bool
-
 	checkbox := widget.NewCheck("local db", func(checked bool) {
 		if checked {
-			localConnection = true
+			cfg.LocalMode = true
 			dbPath.SetText("in program folder")
+			err = config.SaveLocalModeCheckboxState(*cfg, cfgPath)
+			if err != nil {
+				errDialog := dialog.NewInformation("error", err.Error(), login)
+				errDialog.Show()
+				log.Println(err)
+			} else {
+				log.Printf("LocalModeCheckbox state in the config has been updated (%v)", cfg.LocalMode)
+			}
 		} else {
-			localConnection = false
+			cfg.LocalMode = false
 			dbPath.SetText(cfg.Path)
+			err = config.SaveLocalModeCheckboxState(*cfg, cfgPath)
+			if err != nil {
+				errDialog := dialog.NewInformation("error", err.Error(), login)
+				errDialog.Show()
+			} else {
+				log.Printf("LocalModeCheckbox state in the config has been updated (%v)", cfg.LocalMode)
+			}
 		}
 	})
-
+	checkbox.SetChecked(cfg.LocalMode)
 	loginButton := widget.NewButton("login", func() {
-		db, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, localConnection)
+		db, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, cfg.LocalMode)
 		if err != nil {
 			log.Println(err)
 			errDialog := dialog.NewInformation("error", err.Error(), login)

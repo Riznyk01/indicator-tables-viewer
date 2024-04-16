@@ -23,11 +23,10 @@ type Config struct {
 	WindowHeight  float32       `toml:"window_height"`
 	WindowWidth   float32       `toml:"window_width"`
 	InfoTimeout   time.Duration `toml:"info_timeout"`
+	LocalMode     bool          `toml:"local_mode"`
 }
 
 func MustLoad(configPath string) *Config {
-
-	// check if file exists
 	cfg, err := toml.LoadFile(configPath)
 	if err != nil {
 		log.Fatalf("error loading config file: %s", err)
@@ -47,6 +46,21 @@ func MustLoad(configPath string) *Config {
 // UpdateConfig updates the config file on the disk
 func UpdateConfig(config Config, configPath string) error {
 
+	file, err := os.OpenFile(configPath, os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := toml.NewEncoder(file)
+	if err = encoder.Encode(config); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SaveLocalModeCheckboxState(config Config, configPath string) error {
 	file, err := os.OpenFile(configPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return err

@@ -8,20 +8,22 @@ import (
 )
 
 type Config struct {
-	Username      string        `toml:"username"`
-	Host          string        `toml:"host"`
-	Port          string        `toml:"port"`
-	Path          string        `toml:"path"`
-	Password      string        `toml:"password"`
-	LocalHost     string        `toml:"host_local"`
-	LocalPort     string        `toml:"port_local"`
-	LocalPath     string        `toml:"path_local"`
-	LocalPassword string        `toml:"password_local"`
-	DBName        string        `toml:"db_name"`
-	WindowHeight  float32       `toml:"window_height"`
-	WindowWidth   float32       `toml:"window_width"`
-	InfoTimeout   time.Duration `toml:"info_timeout"`
-	LocalMode     bool          `toml:"local_mode"`
+	Username          string        `toml:"username"`
+	Host              string        `toml:"host"`
+	Port              string        `toml:"port"`
+	Path              string        `toml:"path"`
+	Password          string        `toml:"password"`
+	LocalHost         string        `toml:"host_local"`
+	LocalPort         string        `toml:"port_local"`
+	LocalPath         string        `toml:"path_local"`
+	LocalPassword     string        `toml:"password_local"`
+	DBName            string        `toml:"db_name"`
+	WindowHeight      float32       `toml:"window_height"`
+	WindowWidth       float32       `toml:"window_width"`
+	InfoTimeout       time.Duration `toml:"info_timeout"`
+	GoToUpdateTimeout time.Duration `toml:"go_to_update_timeout"`
+	LocalMode         bool          `toml:"local_mode"`
+	UpdatePath        string        `toml:"update_path"`
 }
 
 func MustLoad(configPath string) *Config {

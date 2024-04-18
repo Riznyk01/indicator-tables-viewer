@@ -1,19 +1,15 @@
 db_name = "MEDSTAT.GDB"
-username = "sysdba"
-
-host = "192.168.31.161"
-port = "3050"
-path = "C:\\s"
-password = "masterkey"
-
+host = "192.168.0.1"
 host_local = "localhost"
-port_local = "3050"
-path_local = "C:\\s"
+info_timeout = "2.5s"
+local_mode = false
+password = "1"
 password_local = "masterkey"
-
-header_row_height = 180.0
-row_height = 100.0
-
+path = "D:\\S\\medstat\\base\\kvartal_2024_1"
+path_local = "C:\\Users\\username\\AppData\\Local\\JetBrains\\GoLand2023.3\\tmp\\GoLand"
+port = "3050"
+port_local = "3050"
+username = "sysdba"
 window_height = 0.0
 window_width = 0.0
-info_timeout = "2.5s"
+update_path = "https://statinfo.com.ua/viewer_updates"

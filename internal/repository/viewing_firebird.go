@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	empty = " "
+)
+
 type ViewingFirebird struct {
 	db *sql.DB
 }
@@ -170,8 +174,8 @@ func (v *ViewingFirebird) GetIndicatorNumbers(tableName string) ([]models.Indica
 func (v *ViewingFirebird) GetIndicator(shifr, npokaz, indicatorsRow, decodingRow, decodingTable string) string {
 	fc := "GetIndicator"
 
-	if npokaz == "empty" {
-		return "empty"
+	if npokaz == empty {
+		return empty
 	}
 	var mnojitNum int
 	var ngrup, chislit, znamet, mnojitStr string
@@ -217,92 +221,92 @@ func handleNullString(indicatorsNumbers []IndicatorDataFirebird) []models.Indica
 		processedRow.TABL = numbersRow.TABL
 		processedRow.NZAP = numbersRow.NZAP
 		if !numbersRow.STRTAB.Valid {
-			processedRow.STRTAB = "empty"
+			processedRow.STRTAB = empty
 		} else {
 			processedRow.STRTAB = numbersRow.STRTAB.String
 		}
 		if !numbersRow.SHSTR.Valid {
-			processedRow.SHSTR = "empty"
+			processedRow.SHSTR = empty
 		} else {
 			processedRow.SHSTR = numbersRow.SHSTR.String
 		}
 		if !numbersRow.FORMA.Valid {
-			processedRow.FORMA = "empty"
+			processedRow.FORMA = empty
 		} else {
 			processedRow.FORMA = numbersRow.FORMA.String
 		}
 		if !numbersRow.STROKA.Valid {
-			processedRow.STROKA = "empty"
+			processedRow.STROKA = empty
 		} else {
 			processedRow.STROKA = numbersRow.STROKA.String
 		}
 		if !numbersRow.P1.Valid {
-			processedRow.P1 = "empty"
+			processedRow.P1 = empty
 		} else {
 			processedRow.P1 = numbersRow.P1.String
 		}
 		if !numbersRow.P2.Valid {
-			processedRow.P2 = "empty"
+			processedRow.P2 = empty
 		} else {
 			processedRow.P2 = numbersRow.P2.String
 		}
 		if !numbersRow.P3.Valid {
-			processedRow.P3 = "empty"
+			processedRow.P3 = empty
 		} else {
 			processedRow.P3 = numbersRow.P3.String
 		}
 		if !numbersRow.P4.Valid {
-			processedRow.P4 = "empty"
+			processedRow.P4 = empty
 		} else {
 			processedRow.P4 = numbersRow.P4.String
 		}
 		if !numbersRow.P5.Valid {
-			processedRow.P5 = "empty"
+			processedRow.P5 = empty
 		} else {
 			processedRow.P5 = numbersRow.P5.String
 		}
 		if !numbersRow.P6.Valid {
-			processedRow.P6 = "empty"
+			processedRow.P6 = empty
 		} else {
 			processedRow.P6 = numbersRow.P6.String
 		}
 		if !numbersRow.P7.Valid {
-			processedRow.P7 = "empty"
+			processedRow.P7 = empty
 		} else {
 			processedRow.P7 = numbersRow.P7.String
 		}
 		if !numbersRow.P8.Valid {
-			processedRow.P8 = "empty"
+			processedRow.P8 = empty
 		} else {
 			processedRow.P8 = numbersRow.P8.String
 		}
 		if !numbersRow.P9.Valid {
-			processedRow.P9 = "empty"
+			processedRow.P9 = empty
 		} else {
 			processedRow.P9 = numbersRow.P9.String
 		}
 		if !numbersRow.P10.Valid {
-			processedRow.P10 = "empty"
+			processedRow.P10 = empty
 		} else {
 			processedRow.P10 = numbersRow.P10.String
 		}
 		if !numbersRow.P11.Valid {
-			processedRow.P11 = "empty"
+			processedRow.P11 = empty
 		} else {
 			processedRow.P11 = numbersRow.P11.String
 		}
 		if !numbersRow.P12.Valid {
-			processedRow.P12 = "empty"
+			processedRow.P12 = empty
 		} else {
 			processedRow.P12 = numbersRow.P12.String
 		}
 		if !numbersRow.P13.Valid {
-			processedRow.P13 = "empty"
+			processedRow.P13 = empty
 		} else {
 			processedRow.P13 = numbersRow.P13.String
 		}
 		if !numbersRow.P14.Valid {
-			processedRow.P14 = "empty"
+			processedRow.P14 = empty
 		} else {
 			processedRow.P14 = numbersRow.P14.String
 		}

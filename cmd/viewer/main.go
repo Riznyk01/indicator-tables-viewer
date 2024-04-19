@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -48,22 +47,14 @@ func (r *StaticResource) Content() []byte {
 
 func main() {
 	cfgPath := "config/config_prod.toml"
-
-	pathPtr := flag.String("path", "", "the path to the file")
-	flag.Parse()
-	fmt.Printf("path flag: %v\n", *pathPtr)
-
-	if *pathPtr != "" {
-		cfgPath = *pathPtr
-	}
 	log.Printf("the path of the config is: %s", cfgPath)
 	logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal("error occurred while opening logfile:", err)
 	}
 	defer logFile.Close()
-	//log.SetOutput(logFile)
-	log.SetOutput(os.Stdout)
+	log.SetOutput(logFile)
+	//log.SetOutput(os.Stdout)
 
 	cfg := config.MustLoad(cfgPath)
 
@@ -317,7 +308,7 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 
 		indicators, _ := repo.GetIndicatorNumbers(tableName)
 		for m := 1; m < len(statData); m++ {
-			statData[m] = []string{"empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "empty"}
+			statData[m] = make([]string, 14)
 		}
 		if len(indicators) != 0 {
 			for ind, _ := range indicators {
@@ -512,10 +503,8 @@ func exportToExcel(data [][]string, tableName string) error {
 		newRow := sheet.AddRow()
 		for _, cell := range row {
 			newCell := newRow.AddCell()
-			if cell == "empty" {
-				cell = ""
-			}
 			newCell.Value = cell
+			newCell.GetStyle().Alignment.WrapText = true
 		}
 	}
 

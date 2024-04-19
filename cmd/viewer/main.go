@@ -71,7 +71,7 @@ func main() {
 
 	a := app.New()
 
-	r, _ := loadRecourseFromPath("cmd/viewer/data/Icon.png")
+	r, _ := loadRecourseFromPath("resources/Icon.png")
 	a.SetIcon(r)
 
 	sizer := newTermTheme()

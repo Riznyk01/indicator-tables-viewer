@@ -24,6 +24,7 @@ type Config struct {
 	GoToUpdateTimeout time.Duration `toml:"go_to_update_timeout"`
 	LocalMode         bool          `toml:"local_mode"`
 	UpdatePath        string        `toml:"update_path"`
+	Ver               string        `toml:"update_version"`
 }
 
 func MustLoad(configPath string) *Config {

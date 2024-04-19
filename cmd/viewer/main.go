@@ -20,6 +20,12 @@ import (
 	"time"
 )
 
+const (
+	localVerInfoPath = "ver"
+	errOccur         = "error occurred while"
+	readingVer       = "reading local ver info file"
+)
+
 type Resource interface {
 	Name() string
 	Content() []byte
@@ -91,6 +97,24 @@ func main() {
 		newSettingsWindow(a, cfg, cfgPath, usernameEntry, passwordEntry)
 	})
 
+	versionLabel := widget.NewLabel("version: ")
+	versionLabel.SetText(cfg.Password)
+
+	localVer, err := os.ReadFile(localVerInfoPath)
+	if err != nil {
+		log.Printf("%s %s: %v", errOccur, readingVer, err)
+	}
+
+	localVerStr := string(localVer)
+	year := localVerStr[:4]
+	month := localVerStr[4:6]
+	day := localVerStr[6:8]
+	hour := localVerStr[8:10]
+	minute := localVerStr[10:12]
+	second := localVerStr[12:14]
+
+	versionLabel.SetText("version: " + fmt.Sprintf("%s.%s.%s %s:%s:%s\n", year, month, day, hour, minute, second))
+
 	username := container.NewGridWithColumns(4, widget.NewLabel(""), usernameEntry, passwordEntry, widget.NewLabel(""))
 
 	dbPath := widget.NewEntry()
@@ -138,9 +162,9 @@ func main() {
 	})
 
 	checkRow := container.NewGridWithColumns(3, widget.NewLabel(""), loginButton, widget.NewLabel(""))
-	settingsRow := container.NewGridWithColumns(5, widget.NewLabel(""), widget.NewLabel(""), widget.NewLabel(""), checkbox, settingsButton)
+	settingsRow := container.NewGridWithColumns(5, versionLabel, widget.NewLabel(""), widget.NewLabel(""), checkbox, settingsButton)
 	textRow := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel("username"), widget.NewLabel("password"), widget.NewLabel(""))
-	loginW := container.NewGridWithRows(6, textRow, username, checkRow, widget.NewLabel(""), widget.NewLabel(""), settingsRow)
+	loginW := container.NewGridWithRows(4, textRow, username, checkRow, settingsRow)
 
 	login.SetContent(loginW)
 	login.Resize(fyne.NewSize(1000, 100))

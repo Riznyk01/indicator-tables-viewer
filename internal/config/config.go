@@ -25,6 +25,7 @@ type Config struct {
 	LocalMode         bool          `toml:"local_mode"`
 	UpdatePath        string        `toml:"update_path"`
 	Ver               string        `toml:"update_version"`
+	AutoUpdate        bool          `toml:"auto_update"`
 }
 
 func MustLoad(configPath string) *Config {

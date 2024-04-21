@@ -6,5 +6,7 @@ buildcli:
 	update_ver.cmd
 buildlauncher:
 	go build -ldflags -H=windowsgui -o launcher.exe cmd/launcher/main.go
+	update_ver.cmd
 buildlaunchercli:
 	go build -o launcher.exe cmd/launcher/main.go
+	update_ver.cmd

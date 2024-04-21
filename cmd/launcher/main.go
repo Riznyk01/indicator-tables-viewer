@@ -63,42 +63,48 @@ func main() {
 	update := a.NewWindow(title)
 	info := widget.NewLabel("start")
 
-	go func() {
-		ex, err := updateAvailable(cfg.UpdatePath)
-		if err != nil {
-			info.SetText(err.Error())
-		}
-		if ex && err == nil {
-
-			info.SetText(updateExists)
-			log.Printf(updateExists)
-
-			err = fileDownloader(cfg.UpdatePath, exeFileName, localExeName)
+	if cfg.AutoUpdate {
+		go func() {
+			ex, err := updateAvailable(cfg.UpdatePath)
 			if err != nil {
-				log.Printf("%s %s: %v", errWhileDownloading, exeFileName, err)
-				info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, exeFileName, err))
-			} else {
-				err = fileDownloader(cfg.UpdatePath, localVerInfoPath, remoteVerInfoPath)
-				if err != nil {
-					log.Printf("%s %s: %v", errWhileDownloading, localVerInfoPath, err)
-					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, localVerInfoPath, err))
-				} else {
-					err = os.Rename("ver_remote", "ver")
-					if err != nil {
-						log.Fatal(err)
-					}
-
-					log.Printf(updatedSuccessfully)
-					info.SetText(updatedSuccessfully)
-				}
+				info.SetText(err.Error())
 			}
-			runAfterUpdate()
-			os.Exit(0)
-		} else {
-			runAfterUpdate()
-			os.Exit(0)
-		}
-	}()
+			if ex && err == nil {
+
+				info.SetText(updateExists)
+				log.Printf(updateExists)
+
+				err = fileDownloader(cfg.UpdatePath, exeFileName, localExeName)
+				if err != nil {
+					log.Printf("%s %s: %v", errWhileDownloading, exeFileName, err)
+					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, exeFileName, err))
+				} else {
+					err = fileDownloader(cfg.UpdatePath, localVerInfoPath, remoteVerInfoPath)
+					if err != nil {
+						log.Printf("%s %s: %v", errWhileDownloading, localVerInfoPath, err)
+						info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, localVerInfoPath, err))
+					} else {
+						err = os.Rename("ver_remote", "ver")
+						if err != nil {
+							log.Fatal(err)
+						}
+
+						log.Printf(updatedSuccessfully)
+						info.SetText(updatedSuccessfully)
+					}
+				}
+				runViewer()
+				os.Exit(0)
+			} else {
+				runViewer()
+				fmt.Printf(err.Error())
+				os.Exit(0)
+			}
+		}()
+	} else {
+		runViewer()
+		os.Exit(0)
+	}
 	update.SetContent(info)
 	update.CenterOnScreen()
 	update.Resize(fyne.NewSize(300, 100))
@@ -179,7 +185,7 @@ func fileDownloader(updatePath, fileName, savePath string) error {
 	return nil
 }
 
-func runAfterUpdate() {
+func runViewer() {
 	exePath, err := os.Executable()
 	if err != nil {
 		log.Printf("%s: %v", failedExePath, err)

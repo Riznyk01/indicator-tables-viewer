@@ -26,6 +26,7 @@ type Config struct {
 	UpdatePath        string        `toml:"update_path"`
 	Ver               string        `toml:"update_version"`
 	AutoUpdate        bool          `toml:"auto_update"`
+	XlsExportPath     string        `toml:"excel_export_path"`
 }
 
 func MustLoad(configPath string) *Config {

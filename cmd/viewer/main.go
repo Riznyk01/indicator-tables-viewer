@@ -59,19 +59,19 @@ func main() {
 		log.Fatal("error occurred while opening logfile:", err)
 	}
 	defer logFile.Close()
-	log.SetOutput(logFile)
-	//log.SetOutput(os.Stdout)
+	//log.SetOutput(logFile)
+	log.SetOutput(os.Stdout)
 
 	cfg := config.MustLoad(cfgPath)
 
 	exePath, err := os.Executable()
 	if err != nil {
-		log.Println("error occurred while receiving exe file:", err)
+		log.Printf("error occurred while receiving exe file: %v\n", err)
 		return
 	}
 
 	exeDir := filepath.Dir(exePath)
-	log.Println("the dir to the exe file:", exeDir)
+	log.Printf("the dir to the exe file: %s\n", exeDir)
 
 	cfg.LocalPath = exeDir
 
@@ -242,11 +242,27 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	infoTimeout.SetText(fmt.Sprintf("%v", cfg.InfoTimeout))
 	infoTimeoutCols := container.NewGridWithColumns(3, widget.NewLabel("other settings "), widget.NewLabel("info messages timeout: "), infoTimeout)
 
+	xlsExport := widget.NewEntry()
+
+	selectDirButton := widget.NewButton("Choose Folder", func() {
+		dirDialog := dialog.NewFolderOpen(func(uri fyne.ListableURI, err error) {
+			if err == nil && uri != nil {
+				fmt.Printf("Selected directory: %s", uri.Path())
+				cfg.XlsExportPath = uri.Path()
+				xlsExport.SetText(fmt.Sprintf("%v", cfg.XlsExportPath))
+			}
+		}, settings)
+		dirDialog.Show()
+	})
+
+	xlsExport.SetText(fmt.Sprintf("%v", cfg.XlsExportPath))
+	xlsExportCols := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel("XLS export path (program dir if empty):"), xlsExport, selectDirButton)
+
 	saveSettingsButton := widget.NewButton("save settings", func() {
 
 		newInfoTimeout, err := time.ParseDuration(infoTimeout.Text)
 		if err != nil {
-			log.Printf("error occurred while parsing info messages timeout: %v", err)
+			log.Printf("error occurred while parsing info messages timeout: %v\n", err)
 			return
 		}
 
@@ -261,6 +277,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 		cfg.LocalPassword = localPass.Text
 		cfg.DBName = dbName.Text
 		cfg.InfoTimeout = newInfoTimeout
+		cfg.XlsExportPath = xlsExport.Text
 
 		err = config.UpdateConfig(*cfg, cfgPath)
 
@@ -283,7 +300,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 
 	buttonsRowCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(""), saveSettingsButton)
 
-	settingsRows := container.NewGridWithRows(10,
+	settingsRows := container.NewGridWithRows(11,
 		dbNameCols,
 		usernameSettingsCols,
 		remoteHostCols,
@@ -293,6 +310,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 		localPathCols,
 		localPassCols,
 		infoTimeoutCols,
+		xlsExportCols,
 		buttonsRowCols)
 
 	settings.SetContent(settingsRows)
@@ -369,7 +387,7 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 	info := widget.NewLabel("")
 
 	exportFileButton := widget.NewButton("export to excel", func() {
-		err := exportToExcel(statData, tableName)
+		err := exportToExcel(statData, tableName, cfg.XlsExportPath)
 		if err != nil {
 			info.SetText(err.Error())
 			<-time.After(cfg.InfoTimeout)
@@ -512,11 +530,11 @@ func setResolution() (w, h float32) {
 		return w, h
 	}
 	w = 0.8 * float32(width)
-	h = 0.8 * float32(height)
+	h = 0.7 * float32(height)
 	return w, h
 }
 
-func exportToExcel(data [][]string, tableName string) error {
+func exportToExcel(data [][]string, tableName string, exportPath string) error {
 	file := xlsx.NewFile()
 	sheet, err := file.AddSheet("Sheet1")
 	if err != nil {
@@ -540,9 +558,18 @@ func exportToExcel(data [][]string, tableName string) error {
 	currentTime := time.Now()
 	currentDateTime := currentTime.Format("2006-01-02_15-04-05")
 	filename := tableName + "_" + currentDateTime + ".xlsx"
-	err = file.Save(filename)
+
+	var fullPath string
+
+	if exportPath == "" {
+		fullPath = filename
+	} else {
+		fullPath = filepath.Join(exportPath, filename)
+	}
+
+	err = file.Save(fullPath)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error saving file: %v\n", err))
+		return errors.New(fmt.Sprintf("error occurred while saving xls file: %v\n", err))
 	}
 	return nil
 }

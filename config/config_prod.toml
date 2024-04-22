@@ -1,5 +1,6 @@
 auto_update = true
 db_name = "MEDSTAT.GDB"
+excel_export_path = "C:/tmp"
 go_to_update_timeout = "0s"
 host = "192.168.0.1"
 host_local = "localhost"

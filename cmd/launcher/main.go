@@ -17,10 +17,7 @@ import (
 )
 
 const (
-	cfgPath           = "config/config_prod.toml"
-	exeFileName       = "viewer.exe"
-	localExeName      = "viewer.exe"
-	localVerInfoPath  = "ver"
+	cfgPath           = "build/config/config_prod.toml"
 	remoteVerInfoPath = "ver_remote"
 )
 
@@ -65,7 +62,7 @@ func main() {
 
 	if cfg.AutoUpdate {
 		go func() {
-			ex, err := updateAvailable(cfg.UpdatePath)
+			ex, err := updateAvailable(cfg)
 			if err != nil {
 				info.SetText(err.Error())
 			}
@@ -74,15 +71,15 @@ func main() {
 				info.SetText(updateExists)
 				log.Printf(updateExists)
 
-				err = fileDownloader(cfg.UpdatePath, exeFileName, localExeName)
+				err = fileDownloader(cfg.UpdatePath, cfg.RemoteExeFilename, cfg.LocalExeFilename)
 				if err != nil {
-					log.Printf("%s %s: %v", errWhileDownloading, exeFileName, err)
-					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, exeFileName, err))
+					log.Printf("%s %s: %v", errWhileDownloading, cfg.RemoteExeFilename, err)
+					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.RemoteExeFilename, err))
 				} else {
-					err = fileDownloader(cfg.UpdatePath, localVerInfoPath, remoteVerInfoPath)
+					err = fileDownloader(cfg.UpdatePath, cfg.VerFilePath, remoteVerInfoPath)
 					if err != nil {
-						log.Printf("%s %s: %v", errWhileDownloading, localVerInfoPath, err)
-						info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, localVerInfoPath, err))
+						log.Printf("%s %s: %v", errWhileDownloading, cfg.VerFilePath, err)
+						info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.VerFilePath, err))
 					} else {
 						err = os.Rename("ver_remote", "ver")
 						if err != nil {
@@ -93,16 +90,16 @@ func main() {
 						info.SetText(updatedSuccessfully)
 					}
 				}
-				runViewer()
+				runViewer(cfg)
 				os.Exit(0)
 			} else {
-				runViewer()
+				runViewer(cfg)
 				fmt.Printf(err.Error())
 				os.Exit(0)
 			}
 		}()
 	} else {
-		runViewer()
+		runViewer(cfg)
 		os.Exit(0)
 	}
 	update.SetContent(info)
@@ -111,8 +108,8 @@ func main() {
 	update.Show()
 	a.Run()
 }
-func updateAvailable(updatePath string) (bool, error) {
-	resp, err := http.Get(updatePath + "/" + localVerInfoPath)
+func updateAvailable(cfg *config.Config) (bool, error) {
+	resp, err := http.Get(cfg.UpdatePath + "/" + cfg.VerFilePath)
 	if err != nil {
 		log.Printf("%s %s: %v", errOccur, loadingVer, err)
 		return false, err
@@ -132,7 +129,7 @@ func updateAvailable(updatePath string) (bool, error) {
 		return false, err
 	}
 
-	localVer, err := os.ReadFile(localVerInfoPath)
+	localVer, err := os.ReadFile(cfg.VerFilePath)
 	if err != nil {
 		log.Printf("%s %s: %v", errOccur, readingVer, err)
 		return false, err
@@ -185,21 +182,21 @@ func fileDownloader(updatePath, fileName, savePath string) error {
 	return nil
 }
 
-func runViewer() {
+func runViewer(cfg *config.Config) {
 	exePath, err := os.Executable()
 	if err != nil {
 		log.Printf("%s: %v", failedExePath, err)
 		return
 	}
 	exeDir := filepath.Dir(exePath)
-	viewerExe := filepath.Join(exeDir, localExeName)
+	viewerExe := filepath.Join(exeDir, cfg.LocalExeFilename)
 	if _, err = os.Stat(viewerExe); os.IsNotExist(err) {
-		log.Printf("%s %s", localExeName, doesntExist)
+		log.Printf("%s %s", cfg.LocalExeFilename, doesntExist)
 		return
 	}
 	cmd := exec.Command(viewerExe)
 	if err = cmd.Start(); err != nil {
-		log.Printf("%s starting %s: %v", errOccur, localExeName, err)
+		log.Printf("%s starting %s: %v", errOccur, cfg.LocalExeFilename, err)
 		return
 	}
 }

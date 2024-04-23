@@ -21,9 +21,9 @@ import (
 )
 
 const (
-	localVerInfoPath = "ver"
-	errOccur         = "error occurred while"
-	readingVer       = "reading local ver info file"
+	cfgPath    = "build/config/config_dev.toml"
+	errOccur   = "error occurred while"
+	readingVer = "reading local ver info file"
 )
 
 type Resource interface {
@@ -52,7 +52,7 @@ func (r *StaticResource) Content() []byte {
 }
 
 func main() {
-	cfgPath := "config/config_prod.toml"
+
 	log.Printf("the path of the config is: %s", cfgPath)
 	logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
@@ -77,7 +77,7 @@ func main() {
 
 	a := app.New()
 
-	r, _ := loadRecourseFromPath("resources/Icon.png")
+	r, _ := loadRecourseFromPath(cfg.IconPath)
 	a.SetIcon(r)
 
 	sizer := newTermTheme()
@@ -100,7 +100,7 @@ func main() {
 	versionLabel := widget.NewLabel("version: ")
 	versionLabel.SetText(cfg.Password)
 
-	localVer, err := os.ReadFile(localVerInfoPath)
+	localVer, err := os.ReadFile(cfg.VerFilePath)
 	if err != nil {
 		log.Printf("%s %s: %v", errOccur, readingVer, err)
 	}

@@ -27,6 +27,10 @@ type Config struct {
 	Ver               string        `toml:"update_version"`
 	AutoUpdate        bool          `toml:"auto_update"`
 	XlsExportPath     string        `toml:"excel_export_path"`
+	IconPath          string        `toml:"icon_path"`
+	VerFilePath       string        `toml:"path_to_ver_file"`
+	RemoteExeFilename string        `toml:"remote_exe_filename"`
+	LocalExeFilename  string        `toml:"local_exe_filename"`
 }
 
 func MustLoad(configPath string) *Config {

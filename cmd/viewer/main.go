@@ -13,6 +13,7 @@ import (
 	"github.com/tealeg/xlsx"
 	"indicator-tables-viewer/internal/config"
 	"indicator-tables-viewer/internal/repository"
+	"indicator-tables-viewer/internal/text"
 	"log"
 	"os"
 	"path/filepath"
@@ -22,7 +23,6 @@ import (
 
 const (
 	cfgPath    = "build/config/config_dev.toml"
-	errOccur   = "error occurred while"
 	readingVer = "reading local ver info file"
 )
 
@@ -102,7 +102,7 @@ func main() {
 
 	localVer, err := os.ReadFile(cfg.VerFilePath)
 	if err != nil {
-		log.Printf("%s %s: %v", errOccur, readingVer, err)
+		log.Printf("%s %s: %v", text.ErrOccur, readingVer, err)
 	}
 
 	localVerStr := string(localVer)

@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/widget"
 	"indicator-tables-viewer/internal/config"
+	"indicator-tables-viewer/internal/downloader"
 	"io"
 	"log"
 	"net/http"
@@ -37,11 +38,19 @@ const (
 	localByte           = "local []byte"
 	remoteConvErr       = "remoteVer converting error"
 	localConvErr        = "localVer converting error"
-	downUpd             = "downloading updating file"
 	failedExePath       = "failed to get executable path"
-	fileCreating        = "creating file"
 	doesntExist         = "doesn't exist"
 )
+
+type Launcher struct {
+	cfg *config.Config
+}
+
+func NewLauncher(cfg *config.Config) *Launcher {
+	return &Launcher{
+		cfg: cfg,
+	}
+}
 
 func main() {
 	log.Printf("the path of the config is: %s", cfgPath)
@@ -55,6 +64,7 @@ func main() {
 	log.Printf("%s: %s", configPath, cfgPath)
 
 	cfg := config.MustLoad(cfgPath)
+	l := NewLauncher(cfg)
 
 	a := app.New()
 	update := a.NewWindow(title)
@@ -62,7 +72,8 @@ func main() {
 
 	if cfg.AutoUpdate {
 		go func() {
-			ex, err := updateAvailable(cfg)
+
+			ex, err := l.checkUpdate()
 			if err != nil {
 				info.SetText(err.Error())
 			}
@@ -71,12 +82,12 @@ func main() {
 				info.SetText(updateExists)
 				log.Printf(updateExists)
 
-				err = fileDownloader(cfg.UpdatePath, cfg.RemoteExeFilename, cfg.LocalExeFilename)
+				err = downloader.Download(cfg.UpdatePath, cfg.RemoteExeFilename, cfg.LocalExeFilename)
 				if err != nil {
 					log.Printf("%s %s: %v", errWhileDownloading, cfg.RemoteExeFilename, err)
 					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.RemoteExeFilename, err))
 				} else {
-					err = fileDownloader(cfg.UpdatePath, cfg.VerFilePath, remoteVerInfoPath)
+					err = downloader.Download(cfg.UpdatePath, cfg.VerFilePath, remoteVerInfoPath)
 					if err != nil {
 						log.Printf("%s %s: %v", errWhileDownloading, cfg.VerFilePath, err)
 						info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.VerFilePath, err))
@@ -90,16 +101,16 @@ func main() {
 						info.SetText(updatedSuccessfully)
 					}
 				}
-				runViewer(cfg)
+				l.run()
 				os.Exit(0)
 			} else {
-				runViewer(cfg)
+				l.run()
 				fmt.Printf(err.Error())
 				os.Exit(0)
 			}
 		}()
 	} else {
-		runViewer(cfg)
+		l.run()
 		os.Exit(0)
 	}
 	update.SetContent(info)
@@ -108,8 +119,8 @@ func main() {
 	update.Show()
 	a.Run()
 }
-func updateAvailable(cfg *config.Config) (bool, error) {
-	resp, err := http.Get(cfg.UpdatePath + "/" + cfg.VerFilePath)
+func (l *Launcher) checkUpdate() (bool, error) {
+	resp, err := http.Get(l.cfg.UpdatePath + "/" + l.cfg.VerFilePath)
 	if err != nil {
 		log.Printf("%s %s: %v", errOccur, loadingVer, err)
 		return false, err
@@ -129,7 +140,7 @@ func updateAvailable(cfg *config.Config) (bool, error) {
 		return false, err
 	}
 
-	localVer, err := os.ReadFile(cfg.VerFilePath)
+	localVer, err := os.ReadFile(l.cfg.VerFilePath)
 	if err != nil {
 		log.Printf("%s %s: %v", errOccur, readingVer, err)
 		return false, err
@@ -159,44 +170,21 @@ func updateAvailable(cfg *config.Config) (bool, error) {
 	return remote > local, nil
 }
 
-func fileDownloader(updatePath, fileName, savePath string) error {
-	resp, err := http.Get(updatePath + "/" + fileName)
-	if err != nil {
-		log.Printf("%s %s: %v", errOccur, downUpd, err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	file, err := os.Create(savePath)
-	if err != nil {
-		log.Printf("%s %s: %v", errOccur, fileCreating, err)
-		return err
-	}
-	defer file.Close()
-
-	_, err = io.Copy(file, resp.Body)
-	if err != nil {
-		log.Printf("%s copying file to the dir: %v", errOccur, err)
-		return err
-	}
-	return nil
-}
-
-func runViewer(cfg *config.Config) {
+func (l *Launcher) run() {
 	exePath, err := os.Executable()
 	if err != nil {
 		log.Printf("%s: %v", failedExePath, err)
 		return
 	}
 	exeDir := filepath.Dir(exePath)
-	viewerExe := filepath.Join(exeDir, cfg.LocalExeFilename)
+	viewerExe := filepath.Join(exeDir, l.cfg.LocalExeFilename)
 	if _, err = os.Stat(viewerExe); os.IsNotExist(err) {
-		log.Printf("%s %s", cfg.LocalExeFilename, doesntExist)
+		log.Printf("%s %s", l.cfg.LocalExeFilename, doesntExist)
 		return
 	}
 	cmd := exec.Command(viewerExe)
 	if err = cmd.Start(); err != nil {
-		log.Printf("%s starting %s: %v", errOccur, cfg.LocalExeFilename, err)
+		log.Printf("%s starting %s: %v", errOccur, l.cfg.LocalExeFilename, err)
 		return
 	}
 }

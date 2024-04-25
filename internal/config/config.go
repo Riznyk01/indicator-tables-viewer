@@ -8,6 +8,7 @@ import (
 )
 
 type Config struct {
+	Env               string        `toml:"env"`
 	Username          string        `toml:"username"`
 	Host              string        `toml:"host"`
 	Port              string        `toml:"port"`
@@ -24,13 +25,15 @@ type Config struct {
 	GoToUpdateTimeout time.Duration `toml:"go_to_update_timeout"`
 	LocalMode         bool          `toml:"local_mode"`
 	UpdatePath        string        `toml:"update_path"`
-	Ver               string        `toml:"update_version"`
 	AutoUpdate        bool          `toml:"auto_update"`
 	XlsExportPath     string        `toml:"excel_export_path"`
 	IconPath          string        `toml:"icon_path"`
-	VerFilePath       string        `toml:"path_to_ver_file"`
+	VerRemoteFilePath string        `toml:"path_to_remote_ver_file"`
+	VerLocalFilePath  string        `toml:"path_to_ver_file"`
 	RemoteExeFilename string        `toml:"remote_exe_filename"`
 	LocalExeFilename  string        `toml:"local_exe_filename"`
+	CodePath          string        `toml:"code_path"`
+	DownloadedVerFile string        `toml:"downloaded_ver_file"`
 }
 
 func MustLoad(configPath string) *Config {
@@ -51,7 +54,7 @@ func MustLoad(configPath string) *Config {
 }
 
 // UpdateConfig updates the config file on the disk
-func UpdateConfig(config Config, configPath string) error {
+func UpdateConfig(config *Config, configPath string) error {
 
 	file, err := os.OpenFile(configPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
@@ -67,7 +70,7 @@ func UpdateConfig(config Config, configPath string) error {
 	return nil
 }
 
-func SaveLocalModeCheckboxState(config Config, configPath string) error {
+func SaveLocalModeCheckboxState(config *Config, configPath string) error {
 	file, err := os.OpenFile(configPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return err

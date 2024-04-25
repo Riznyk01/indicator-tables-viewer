@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	"fmt"
 	"indicator-tables-viewer/internal/text"
 	"io"
 	"log"
@@ -8,8 +9,12 @@ import (
 	"os"
 )
 
-func Download(sourceURL, fileName, destinationPath string) error {
-	resp, err := http.Get(sourceURL + "/" + fileName)
+func Download(URL, fileName, destinationPath string) error {
+	fc := "Download"
+	fmt.Printf("%s downloading started: URL=%s, fileName=%s, destinationPath=%s\n",
+		fc, URL, fileName, destinationPath)
+
+	resp, err := http.Get(URL + "/" + fileName)
 	if err != nil {
 		log.Printf("%s %s: %v", text.ErrOccur, text.DownUpd, err)
 		return err

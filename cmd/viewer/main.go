@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	cfgPath    = "build/config/config_dev.toml"
 	readingVer = "reading local ver info file"
 )
 
@@ -52,15 +51,15 @@ func (r *StaticResource) Content() []byte {
 }
 
 func main() {
-
+	cfgPath := os.Getenv("CONFIG_PATH")
 	log.Printf("the path of the config is: %s", cfgPath)
 	logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal("error occurred while opening logfile:", err)
 	}
 	defer logFile.Close()
-	//log.SetOutput(logFile)
-	log.SetOutput(os.Stdout)
+	log.SetOutput(logFile)
+	//log.SetOutput(os.Stdout)
 
 	cfg := config.MustLoad(cfgPath)
 
@@ -77,7 +76,7 @@ func main() {
 
 	a := app.New()
 
-	r, _ := loadRecourseFromPath(cfg.IconPath)
+	r, _ := loadRecourseFromPath(cfg.CodePath + cfg.IconPath)
 	a.SetIcon(r)
 
 	sizer := newTermTheme()
@@ -100,7 +99,8 @@ func main() {
 	versionLabel := widget.NewLabel("version: ")
 	versionLabel.SetText(cfg.Password)
 
-	localVer, err := os.ReadFile(cfg.VerFilePath)
+	log.Printf("viewer.exe path to the ver file: %s\n", cfg.CodePath+cfg.VerLocalFilePath)
+	localVer, err := os.ReadFile(cfg.CodePath + cfg.VerLocalFilePath)
 	if err != nil {
 		log.Printf("%s %s: %v", text.ErrOccur, readingVer, err)
 	}
@@ -125,7 +125,7 @@ func main() {
 			cfg.LocalMode = true
 			passwordEntry.SetText(cfg.LocalPassword)
 			dbPath.SetText("in program folder")
-			err = config.SaveLocalModeCheckboxState(*cfg, cfgPath)
+			err = config.SaveLocalModeCheckboxState(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
@@ -137,7 +137,7 @@ func main() {
 			cfg.LocalMode = false
 			dbPath.SetText(cfg.Path)
 			passwordEntry.SetText(cfg.Password)
-			err = config.SaveLocalModeCheckboxState(*cfg, cfgPath)
+			err = config.SaveLocalModeCheckboxState(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
@@ -279,7 +279,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 		cfg.InfoTimeout = newInfoTimeout
 		cfg.XlsExportPath = xlsExport.Text
 
-		err = config.UpdateConfig(*cfg, cfgPath)
+		err = config.UpdateConfig(cfg, cfgPath)
 
 		if err != nil {
 			log.Println(err)

@@ -20,7 +20,6 @@ type Config struct {
 	WindowHeight      float32       `toml:"window_height"`
 	WindowWidth       float32       `toml:"window_width"`
 	InfoTimeout       time.Duration `toml:"info_timeout"`
-	GoToUpdateTimeout time.Duration `toml:"go_to_update_timeout"`
 	LocalMode         bool          `toml:"local_mode"`
 	UpdatePath        string        `toml:"update_path"`
 	AutoUpdate        bool          `toml:"auto_update"`

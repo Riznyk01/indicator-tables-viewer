@@ -1,13 +1,12 @@
-auto_update = false
+auto_update = true
 code_path = ""
 db_name = "MEDSTAT.GDB"
 downloaded_ver_file = "ver_remote"
 env = "prod"
 excel_export_path = "C:/алгоритми"
-go_to_update_timeout = "0s"
 host = "192.168.0.1"
 host_local = "localhost"
-icon_path = "resources/icon.png"
+icon_path = "\\resources\\icon.png"
 info_timeout = "2.5s"
 local_exe_filename = "viewer.exe"
 local_mode = false

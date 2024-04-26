@@ -9,9 +9,9 @@ import (
 
 func NewFirebirdDB(cfg *config.Config, login, pass string, local bool) (*sql.DB, string, error) {
 	var connectionString string
-
 	var localPathToDb string
-	if cfg.Env == "env" {
+
+	if cfg.Env == "dev" {
 		localPathToDb = cfg.CodePath
 	} else if cfg.Env == "prod" {
 		localPathToDb = cfg.LocalPath

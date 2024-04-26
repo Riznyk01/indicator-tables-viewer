@@ -69,14 +69,12 @@ func main() {
 		return
 	}
 
-	exeDir := filepath.Dir(exePath)
-	log.Printf("the dir to the exe file: %s\n", exeDir)
-
-	cfg.LocalPath = exeDir
+	cfg.LocalPath = filepath.Dir(exePath)
+	log.Printf("the dir to the exe file: %s\n", cfg.LocalPath)
 
 	a := app.New()
 
-	r, _ := loadRecourseFromPath(cfg.CodePath + cfg.IconPath)
+	r, _ := loadRecourseFromPath(cfg.LocalPath + cfg.IconPath)
 	a.SetIcon(r)
 
 	sizer := newTermTheme()
@@ -217,17 +215,13 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 
 	remotePath := widget.NewEntry()
 	remotePath.SetText(cfg.RemotePathToDb)
-	remotePathCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("path to DB: "), remotePath)
+	remotePathCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("path to remote DB: "), remotePath)
 
 	localPort := widget.NewEntry()
 	localPort.SetText(cfg.LocalPort)
 	localHost := widget.NewEntry()
 	localHost.SetText(cfg.LocalHost)
 	localHostCols := container.NewGridWithColumns(4, widget.NewLabel("local db settings"), widget.NewLabel("[host:port]: "), localHost, localPort)
-
-	localPath := widget.NewEntry()
-	localPath.SetText(cfg.LocalPath)
-	localPathCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("path to DB (the program dir): "), localPath)
 
 	infoTimeout := widget.NewEntry()
 	infoTimeout.SetText(fmt.Sprintf("%v", cfg.InfoTimeout))
@@ -263,7 +257,6 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 		cfg.RemotePathToDb = remotePath.Text
 		cfg.LocalHost = localHost.Text
 		cfg.LocalPort = localPort.Text
-		cfg.LocalPath = localPath.Text
 		cfg.DBName = dbName.Text
 		cfg.InfoTimeout = newInfoTimeout
 		cfg.XlsExportPath = xlsExport.Text
@@ -284,13 +277,12 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 
 	buttonsRowCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(""), saveSettingsButton)
 
-	settingsRows := container.NewGridWithRows(9,
+	settingsRows := container.NewGridWithRows(8,
 		dbNameCols,
 		usernameSettingsCols,
 		remoteHostCols,
 		remotePathCols,
 		localHostCols,
-		localPathCols,
 		infoTimeoutCols,
 		xlsExportCols,
 		buttonsRowCols)

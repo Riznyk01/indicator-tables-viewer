@@ -195,6 +195,9 @@ func (l *Launcher) checkUpdate() (bool, error) {
 }
 
 func (l *Launcher) run(exeDir string) {
+	if l.cfg.Env == "dev" {
+		exeDir = l.cfg.CodePath
+	}
 
 	log.Printf("path for start viewer: %s\\%s\n", exeDir, l.cfg.LocalExeFilename)
 	var cmd *exec.Cmd

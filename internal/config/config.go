@@ -12,12 +12,10 @@ type Config struct {
 	Username          string        `toml:"username"`
 	Host              string        `toml:"host"`
 	Port              string        `toml:"port"`
-	Path              string        `toml:"path"`
-	Password          string        `toml:"password"`
+	RemotePathToDb    string        `toml:"remote_path_to_db"`
 	LocalHost         string        `toml:"host_local"`
 	LocalPort         string        `toml:"port_local"`
-	LocalPath         string        `toml:"path_local"`
-	LocalPassword     string        `toml:"password_local"`
+	LocalPath         string        `toml:"local_path"`
 	DBName            string        `toml:"db_name"`
 	WindowHeight      float32       `toml:"window_height"`
 	WindowWidth       float32       `toml:"window_width"`

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -62,6 +63,13 @@ func main() {
 	} else {
 		cfgPath = os.Getenv("CFG_PATH")
 	}
+
+	cfgPathFlag := flag.String("CFG_PATH", "", "path to the config")
+	flag.Parse()
+	if *cfgPathFlag != "" {
+		cfgPath = *cfgPathFlag
+	}
+
 	log.Printf("the path of the config is: %s", cfgPath)
 	log.Printf("%s: %s", configPath, cfgPath)
 	cfg := config.MustLoad(cfgPath)

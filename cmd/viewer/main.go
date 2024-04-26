@@ -89,15 +89,11 @@ func main() {
 	usernameEntry.SetPlaceHolder("username")
 
 	passwordEntry := widget.NewPasswordEntry()
-	passwordEntry.SetText(cfg.Password)
 	passwordEntry.SetPlaceHolder("password")
 
 	settingsButton := widget.NewButton("settings", func() {
-		newSettingsWindow(a, cfg, cfgPath, usernameEntry, passwordEntry)
+		newSettingsWindow(a, cfg, cfgPath, usernameEntry)
 	})
-
-	versionLabel := widget.NewLabel("version: ")
-	versionLabel.SetText(cfg.Password)
 
 	log.Printf("viewer.exe path to the ver file: %s\n", cfg.CodePath+cfg.VerLocalFilePath)
 	localVer, err := os.ReadFile(cfg.CodePath + cfg.VerLocalFilePath)
@@ -113,17 +109,17 @@ func main() {
 	minute := localVerStr[10:12]
 	second := localVerStr[12:14]
 
-	versionLabel.SetText("version: " + fmt.Sprintf("%s.%s.%s %s:%s:%s\n", year, month, day, hour, minute, second))
+	versionLabel := widget.NewLabel("")
+	versionLabel.SetText("version: " + fmt.Sprintf("%s.%s.%s %s:%s:%s\n%s mode", year, month, day, hour, minute, second, cfg.Env))
 
 	username := container.NewGridWithColumns(4, widget.NewLabel(""), usernameEntry, passwordEntry, widget.NewLabel(""))
 
 	dbPath := widget.NewEntry()
-	dbPath.SetText(cfg.Path + "/" + cfg.DBName)
+	dbPath.SetText(cfg.RemotePathToDb + "/" + cfg.DBName)
 
 	checkbox := widget.NewCheck("local db", func(checked bool) {
 		if checked {
 			cfg.LocalMode = true
-			passwordEntry.SetText(cfg.LocalPassword)
 			dbPath.SetText("in program folder")
 			err = config.SaveLocalModeCheckboxState(cfg, cfgPath)
 			if err != nil {
@@ -135,8 +131,7 @@ func main() {
 			}
 		} else {
 			cfg.LocalMode = false
-			dbPath.SetText(cfg.Path)
-			passwordEntry.SetText(cfg.Password)
+			dbPath.SetText(cfg.RemotePathToDb)
 			err = config.SaveLocalModeCheckboxState(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
@@ -146,9 +141,12 @@ func main() {
 			}
 		}
 	})
+
+	connStr := widget.NewLabel("")
+
 	checkbox.SetChecked(cfg.LocalMode)
 	loginButton := widget.NewButton("login", func() {
-		db, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, cfg.LocalMode)
+		db, connectionString, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, cfg.LocalMode)
 		if err != nil {
 			log.Println(err)
 			errDialog := dialog.NewInformation("error", err.Error(), login)
@@ -156,14 +154,15 @@ func main() {
 		} else {
 			login.Hide()
 			log.Printf("connected")
+			connStr.SetText("connection: " + connectionString)
 			repo := repository.NewRepository(db)
-			newViewerWindow(a, repo, cfg)
+			newViewerWindow(a, repo, cfg, connStr)
 		}
 	})
 
+	textRow := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel("username"), widget.NewLabel("password"), widget.NewLabel(""))
 	checkRow := container.NewGridWithColumns(3, widget.NewLabel(""), loginButton, widget.NewLabel(""))
 	settingsRow := container.NewGridWithColumns(5, versionLabel, widget.NewLabel(""), widget.NewLabel(""), checkbox, settingsButton)
-	textRow := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel("username"), widget.NewLabel("password"), widget.NewLabel(""))
 	loginW := container.NewGridWithRows(4, textRow, username, checkRow, settingsRow)
 
 	login.SetContent(loginW)
@@ -197,7 +196,7 @@ func loadRecourseFromPath(path string) (Resource, error) {
 	name := filepath.Base(path)
 	return NewStaticResource(name, iconData), nil
 }
-func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernameEntry *widget.Entry, passwordEntry *widget.Entry) {
+func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernameEntry *widget.Entry) {
 	settings := app.NewWindow("settings")
 	settings.Resize(fyne.NewSize(500, 100))
 	settings.CenterOnScreen()
@@ -217,12 +216,8 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	remoteHostCols := container.NewGridWithColumns(4, widget.NewLabel("remote db settings"), widget.NewLabel("[host:port]: "), remoteHost, remotePort)
 
 	remotePath := widget.NewEntry()
-	remotePath.SetText(cfg.Path)
+	remotePath.SetText(cfg.RemotePathToDb)
 	remotePathCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("path to DB: "), remotePath)
-
-	remotePass := widget.NewEntry()
-	remotePass.SetText(cfg.Password)
-	remotePassCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("pass: "), remotePass)
 
 	localPort := widget.NewEntry()
 	localPort.SetText(cfg.LocalPort)
@@ -233,10 +228,6 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	localPath := widget.NewEntry()
 	localPath.SetText(cfg.LocalPath)
 	localPathCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("path to DB (the program dir): "), localPath)
-
-	localPass := widget.NewEntry()
-	localPass.SetText(cfg.LocalPassword)
-	localPassCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("pass: "), localPass)
 
 	infoTimeout := widget.NewEntry()
 	infoTimeout.SetText(fmt.Sprintf("%v", cfg.InfoTimeout))
@@ -269,12 +260,10 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 		cfg.Username = usernameEntry.Text
 		cfg.Host = remoteHost.Text
 		cfg.Port = remotePort.Text
-		cfg.Path = remotePath.Text
-		cfg.Password = remotePass.Text
+		cfg.RemotePathToDb = remotePath.Text
 		cfg.LocalHost = localHost.Text
 		cfg.LocalPort = localPort.Text
 		cfg.LocalPath = localPath.Text
-		cfg.LocalPassword = localPass.Text
 		cfg.DBName = dbName.Text
 		cfg.InfoTimeout = newInfoTimeout
 		cfg.XlsExportPath = xlsExport.Text
@@ -289,26 +278,19 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 			successDialog := dialog.NewInformation("settings", "config has been changed", settings)
 			successDialog.Show()
 			usernameEntry.SetText(cfg.Username)
-			if cfg.LocalMode {
-				passwordEntry.SetText(cfg.LocalPassword)
-			} else {
-				passwordEntry.SetText(cfg.Password)
-			}
 		}
 		settings.Close()
 	})
 
 	buttonsRowCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(""), saveSettingsButton)
 
-	settingsRows := container.NewGridWithRows(11,
+	settingsRows := container.NewGridWithRows(9,
 		dbNameCols,
 		usernameSettingsCols,
 		remoteHostCols,
 		remotePathCols,
-		remotePassCols,
 		localHostCols,
 		localPathCols,
-		localPassCols,
 		infoTimeoutCols,
 		xlsExportCols,
 		buttonsRowCols)
@@ -316,7 +298,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	settings.SetContent(settingsRows)
 	settings.Show()
 }
-func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Config) {
+func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Config, connStr *widget.Label) {
 	log.Printf("Main window is started")
 	var tableName string
 	statData := newData()
@@ -422,7 +404,9 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 	scr := container.NewVScroll(t)
 	scr.SetMinSize(tableSize)
 
-	window.SetContent(container.NewVBox(horizontalContent, scr, info))
+	infoLine := container.NewGridWithColumns(2, info, connStr)
+
+	window.SetContent(container.NewVBox(horizontalContent, scr, infoLine))
 	window.Show()
 }
 

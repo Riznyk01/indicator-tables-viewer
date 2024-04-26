@@ -7,14 +7,22 @@ import (
 	"log"
 )
 
-func NewFirebirdDB(cfg *config.Config, login, pass string, local bool) (*sql.DB, error) {
+func NewFirebirdDB(cfg *config.Config, login, pass string, local bool) (*sql.DB, string, error) {
 	var connectionString string
+
+	var localPathToDb string
+	if cfg.Env == "env" {
+		localPathToDb = cfg.CodePath
+	} else if cfg.Env == "prod" {
+		localPathToDb = cfg.LocalPath
+	}
+
 	if local {
 		connectionString = fmt.Sprintf("%s:%s@%s:%s/%s/%s",
-			login, pass, cfg.LocalHost, cfg.LocalPort, cfg.LocalPath, cfg.DBName)
+			login, pass, cfg.LocalHost, cfg.LocalPort, localPathToDb, cfg.DBName)
 	} else {
 		connectionString = fmt.Sprintf("%s:%s@%s:%s/%s/%s",
-			login, pass, cfg.Host, cfg.Port, cfg.Path, cfg.DBName)
+			login, pass, cfg.Host, cfg.Port, cfg.RemotePathToDb, cfg.DBName)
 	}
 
 	log.Printf("connection string is: %s\n", connectionString)
@@ -22,13 +30,13 @@ func NewFirebirdDB(cfg *config.Config, login, pass string, local bool) (*sql.DB,
 
 	if err != nil {
 		log.Println("Error connecting to database:", err)
-		return nil, err
+		return nil, "", err
 	}
 
 	err = db.Ping()
 	if err != nil {
 		log.Println("Error pinging database:", err)
-		return nil, err
+		return nil, "", err
 	}
-	return db, nil
+	return db, connectionString, nil
 }

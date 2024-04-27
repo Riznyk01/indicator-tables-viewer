@@ -144,7 +144,7 @@ func main() {
 
 	checkbox.SetChecked(cfg.LocalMode)
 	loginButton := widget.NewButton("login", func() {
-		db, connectionString, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, cfg.LocalMode)
+		db, connectionString, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, cfg.LocalMode, cfg.YearDB)
 		if err != nil {
 			log.Println(err)
 			errDialog := dialog.NewInformation("error", err.Error(), login)

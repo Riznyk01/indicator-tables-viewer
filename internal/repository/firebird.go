@@ -7,9 +7,22 @@ import (
 	"log"
 )
 
-func NewFirebirdDB(cfg *config.Config, login, pass string, local bool) (*sql.DB, string, error) {
-	var connectionString string
-	var localPathToDb string
+func NewFirebirdDB(cfg *config.Config, login, pass string, local bool, yearPeriod bool) (*sql.DB, string, error) {
+	var connectionString, localPathToDb, dbDir string
+
+	if yearPeriod {
+		if local {
+			dbDir = "\\" + cfg.LocalYearDbDir
+		} else {
+			dbDir = cfg.RemoteYearDbDir
+		}
+	} else {
+		if local {
+			dbDir = "\\" + cfg.LocalQuarterDbDir
+		} else {
+			dbDir = cfg.RemoteQuarterDbDir
+		}
+	}
 
 	if cfg.Env == "dev" {
 		localPathToDb = cfg.CodePath
@@ -19,10 +32,10 @@ func NewFirebirdDB(cfg *config.Config, login, pass string, local bool) (*sql.DB,
 
 	if local {
 		connectionString = fmt.Sprintf("%s:%s@%s:%s/%s/%s",
-			login, pass, cfg.LocalHost, cfg.LocalPort, localPathToDb, cfg.DBName)
+			login, pass, cfg.LocalHost, cfg.LocalPort, localPathToDb+dbDir, cfg.DBName)
 	} else {
 		connectionString = fmt.Sprintf("%s:%s@%s:%s/%s/%s",
-			login, pass, cfg.Host, cfg.Port, cfg.RemotePathToDb, cfg.DBName)
+			login, pass, cfg.Host, cfg.Port, cfg.RemotePathToDb+dbDir, cfg.DBName)
 	}
 
 	log.Printf("connection string is: %s\n", connectionString)

@@ -8,29 +8,34 @@ import (
 )
 
 type Config struct {
-	Env               string        `toml:"env"`
-	Username          string        `toml:"username"`
-	Host              string        `toml:"host"`
-	Port              string        `toml:"port"`
-	RemotePathToDb    string        `toml:"remote_path_to_db"`
-	LocalHost         string        `toml:"host_local"`
-	LocalPort         string        `toml:"port_local"`
-	LocalPath         string        `toml:"local_path"`
-	DBName            string        `toml:"db_name"`
-	WindowHeight      float32       `toml:"window_height"`
-	WindowWidth       float32       `toml:"window_width"`
-	InfoTimeout       time.Duration `toml:"info_timeout"`
-	LocalMode         bool          `toml:"local_mode"`
-	UpdatePath        string        `toml:"update_path"`
-	AutoUpdate        bool          `toml:"auto_update"`
-	XlsExportPath     string        `toml:"excel_export_path"`
-	IconPath          string        `toml:"icon_path"`
-	VerRemoteFilePath string        `toml:"path_to_remote_ver_file"`
-	VerLocalFilePath  string        `toml:"path_to_ver_file"`
-	RemoteExeFilename string        `toml:"remote_exe_filename"`
-	LocalExeFilename  string        `toml:"local_exe_filename"`
-	CodePath          string        `toml:"code_path"`
-	DownloadedVerFile string        `toml:"downloaded_ver_file"`
+	Env                string        `toml:"env"`
+	Username           string        `toml:"username"`
+	Host               string        `toml:"host"`
+	Port               string        `toml:"port"`
+	RemotePathToDb     string        `toml:"remote_path_to_db"`
+	LocalHost          string        `toml:"host_local"`
+	LocalPort          string        `toml:"port_local"`
+	LocalPath          string        `toml:"local_path"`
+	DBName             string        `toml:"db_name"`
+	WindowHeight       float32       `toml:"window_height"`
+	WindowWidth        float32       `toml:"window_width"`
+	InfoTimeout        time.Duration `toml:"info_timeout"`
+	LocalMode          bool          `toml:"local_mode"`
+	UpdatePath         string        `toml:"update_path"`
+	AutoUpdate         bool          `toml:"auto_update"`
+	XlsExportPath      string        `toml:"excel_export_path"`
+	IconPath           string        `toml:"icon_path"`
+	VerRemoteFilePath  string        `toml:"path_to_remote_ver_file"`
+	VerLocalFilePath   string        `toml:"path_to_ver_file"`
+	RemoteExeFilename  string        `toml:"remote_exe_filename"`
+	LocalExeFilename   string        `toml:"local_exe_filename"`
+	CodePath           string        `toml:"code_path"`
+	DownloadedVerFile  string        `toml:"downloaded_ver_file"`
+	LocalYearDbDir     string        `toml:"local_year_db_dir"`
+	LocalQuarterDbDir  string        `toml:"local_quarter_db_dir"`
+	RemoteYearDbDir    string        `toml:"remote_year_db_dir"`
+	RemoteQuarterDbDir string        `toml:"remote_quarter_db_dir"`
+	YearDB             bool          `toml:"year_db"`
 }
 
 func MustLoad(configPath string) *Config {

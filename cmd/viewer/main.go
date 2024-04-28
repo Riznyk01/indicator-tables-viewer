@@ -115,11 +115,11 @@ func main() {
 	dbPath := widget.NewEntry()
 	dbPath.SetText(cfg.RemotePathToDb + "/" + cfg.DBName)
 
-	checkbox := widget.NewCheck("local db", func(checked bool) {
+	checkboxLocalMode := widget.NewCheck("local db", func(checked bool) {
 		if checked {
 			cfg.LocalMode = true
 			dbPath.SetText("in program folder")
-			err = config.SaveLocalModeCheckboxState(cfg, cfgPath)
+			err = config.UpdateConfig(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
@@ -130,7 +130,7 @@ func main() {
 		} else {
 			cfg.LocalMode = false
 			dbPath.SetText(cfg.RemotePathToDb)
-			err = config.SaveLocalModeCheckboxState(cfg, cfgPath)
+			err = config.UpdateConfig(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
@@ -140,9 +140,33 @@ func main() {
 		}
 	})
 
+	checkboxYearDB := widget.NewCheck("year db (qtr. if not)", func(checked bool) {
+		if checked {
+			cfg.YearDB = true
+			err = config.UpdateConfig(cfg, cfgPath)
+			if err != nil {
+				errDialog := dialog.NewInformation("error", err.Error(), login)
+				errDialog.Show()
+				log.Println(err)
+			} else {
+				log.Printf("checkboxYearDB state in the config has been updated (%v)", cfg.YearDB)
+			}
+		} else {
+			cfg.YearDB = false
+			err = config.UpdateConfig(cfg, cfgPath)
+			if err != nil {
+				errDialog := dialog.NewInformation("error", err.Error(), login)
+				errDialog.Show()
+			} else {
+				log.Printf("checkboxYearDB state in the config has been updated (%v)", cfg.YearDB)
+			}
+		}
+	})
+
 	connStr := widget.NewLabel("")
 
-	checkbox.SetChecked(cfg.LocalMode)
+	checkboxLocalMode.SetChecked(cfg.LocalMode)
+	checkboxYearDB.SetChecked(cfg.YearDB)
 	loginButton := widget.NewButton("login", func() {
 		db, connectionString, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, cfg.LocalMode, cfg.YearDB)
 		if err != nil {
@@ -160,7 +184,8 @@ func main() {
 
 	textRow := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel("username"), widget.NewLabel("password"), widget.NewLabel(""))
 	checkRow := container.NewGridWithColumns(3, widget.NewLabel(""), loginButton, widget.NewLabel(""))
-	settingsRow := container.NewGridWithColumns(5, versionLabel, widget.NewLabel(""), widget.NewLabel(""), checkbox, settingsButton)
+	settingsRow := container.NewGridWithColumns(5, versionLabel, widget.NewLabel(""), checkboxLocalMode, checkboxYearDB, settingsButton)
+
 	loginW := container.NewGridWithRows(4, textRow, username, checkRow, settingsRow)
 
 	login.SetContent(loginW)

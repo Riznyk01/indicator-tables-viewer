@@ -71,18 +71,3 @@ func UpdateConfig(config *Config, configPath string) error {
 
 	return nil
 }
-
-func SaveLocalModeCheckboxState(config *Config, configPath string) error {
-	file, err := os.OpenFile(configPath, os.O_WRONLY|os.O_TRUNC, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	encoder := toml.NewEncoder(file)
-	if err = encoder.Encode(config); err != nil {
-		return err
-	}
-
-	return nil
-}

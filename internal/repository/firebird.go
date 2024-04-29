@@ -8,8 +8,8 @@ import (
 )
 
 func NewFirebirdDB(cfg *config.Config, login, pass string, local bool, yearPeriod bool) (*sql.DB, string, error) {
-	var connectionString, localPathToDb, dbDir string
-
+	var connectionString, connectionStringWithoutPass, localPathToDb, dbDir string
+	passwordReplacementText := "******"
 	if yearPeriod {
 		if local {
 			dbDir = "\\" + cfg.LocalYearDbDir
@@ -33,12 +33,17 @@ func NewFirebirdDB(cfg *config.Config, login, pass string, local bool, yearPerio
 	if local {
 		connectionString = fmt.Sprintf("%s:%s@%s:%s/%s/%s",
 			login, pass, cfg.LocalHost, cfg.LocalPort, localPathToDb+dbDir, cfg.DBName)
+
+		connectionStringWithoutPass = fmt.Sprintf("%s:%s@%s:%s/%s/%s",
+			login, passwordReplacementText, cfg.LocalHost, cfg.LocalPort, localPathToDb+dbDir, cfg.DBName)
 	} else {
 		connectionString = fmt.Sprintf("%s:%s@%s:%s/%s/%s",
 			login, pass, cfg.Host, cfg.Port, cfg.RemotePathToDb+dbDir, cfg.DBName)
+		connectionStringWithoutPass = fmt.Sprintf("%s:%s@%s:%s/%s/%s",
+			login, passwordReplacementText, cfg.Host, cfg.Port, cfg.RemotePathToDb+dbDir, cfg.DBName)
 	}
 
-	log.Printf("connection string is: %s\n", connectionString)
+	log.Printf("connection string is: %s\n", connectionStringWithoutPass)
 	db, err := sql.Open("firebirdsql", connectionString)
 
 	if err != nil {
@@ -51,5 +56,5 @@ func NewFirebirdDB(cfg *config.Config, login, pass string, local bool, yearPerio
 		log.Println("Error pinging database:", err)
 		return nil, "", err
 	}
-	return db, connectionString, nil
+	return db, connectionStringWithoutPass, nil
 }

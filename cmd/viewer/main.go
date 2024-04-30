@@ -242,6 +242,22 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	remotePath.SetText(cfg.RemotePathToDb)
 	remotePathCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("path to remote DB: "), remotePath)
 
+	remoteYearDBDir := widget.NewEntry()
+	remoteYearDBDir.SetText(cfg.RemoteYearDbDir)
+	remoteYearDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("dir name for year DB: "), remoteYearDBDir)
+
+	remoteQuarterDBDir := widget.NewEntry()
+	remoteQuarterDBDir.SetText(cfg.RemoteQuarterDbDir)
+	remoteQuarterDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("dir name for quarter DB: "), remoteQuarterDBDir)
+
+	localYearDBDir := widget.NewEntry()
+	localYearDBDir.SetText(cfg.LocalYearDbDir)
+	localYearDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("dir name for year DB: "), localYearDBDir)
+
+	localQuarterDBDir := widget.NewEntry()
+	localQuarterDBDir.SetText(cfg.LocalQuarterDbDir)
+	localQuarterDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("dir name for quarter DB: "), localQuarterDBDir)
+
 	localPort := widget.NewEntry()
 	localPort.SetText(cfg.LocalPort)
 	localHost := widget.NewEntry()
@@ -302,12 +318,16 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 
 	buttonsRowCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(""), saveSettingsButton)
 
-	settingsRows := container.NewGridWithRows(8,
+	settingsRows := container.NewGridWithRows(12,
 		dbNameCols,
 		usernameSettingsCols,
 		remoteHostCols,
 		remotePathCols,
+		remoteQuarterDBDirCols,
+		remoteYearDBDirCols,
 		localHostCols,
+		localQuarterDBDirCols,
+		localYearDBDirCols,
 		infoTimeoutCols,
 		xlsExportCols,
 		buttonsRowCols)

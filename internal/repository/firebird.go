@@ -7,17 +7,17 @@ import (
 	"log"
 )
 
-func NewFirebirdDB(cfg *config.Config, login, pass string, local bool, yearPeriod bool) (*sql.DB, string, error) {
+func NewFirebirdDB(cfg *config.Config, login, pass string) (*sql.DB, string, error) {
 	var connectionString, connectionStringWithoutPass, localPathToDb, dbDir string
 	passwordReplacementText := "******"
-	if yearPeriod {
-		if local {
+	if cfg.YearDB {
+		if cfg.LocalMode {
 			dbDir = "\\" + cfg.LocalYearDbDir
 		} else {
 			dbDir = cfg.RemoteYearDbDir
 		}
 	} else {
-		if local {
+		if cfg.LocalMode {
 			dbDir = "\\" + cfg.LocalQuarterDbDir
 		} else {
 			dbDir = cfg.RemoteQuarterDbDir
@@ -30,7 +30,7 @@ func NewFirebirdDB(cfg *config.Config, login, pass string, local bool, yearPerio
 		localPathToDb = cfg.LocalPath
 	}
 
-	if local {
+	if cfg.LocalMode {
 		connectionString = fmt.Sprintf("%s:%s@%s:%s/%s/%s",
 			login, pass, cfg.LocalHost, cfg.LocalPort, localPathToDb+dbDir, cfg.DBName)
 

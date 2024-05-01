@@ -12,6 +12,7 @@ import (
 	_ "github.com/nakagami/firebirdsql"
 	"github.com/tealeg/xlsx"
 	"indicator-tables-viewer/internal/config"
+	"indicator-tables-viewer/internal/logger"
 	"indicator-tables-viewer/internal/repository"
 	"indicator-tables-viewer/internal/text"
 	"log"
@@ -51,16 +52,8 @@ func (r *StaticResource) Content() []byte {
 }
 
 func main() {
-	cfgPath := os.Getenv("CONFIG_PATH")
-	log.Printf("the path of the config is: %s", cfgPath)
-	logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatal("error occurred while opening logfile:", err)
-	}
-	defer logFile.Close()
-	log.SetOutput(logFile)
-	//log.SetOutput(os.Stdout)
 
+	cfgPath := os.Getenv("CONFIG_PATH")
 	cfg := config.MustLoad(cfgPath)
 
 	exePath, err := os.Executable()
@@ -68,9 +61,31 @@ func main() {
 		log.Printf("error occurred while receiving exe file: %v\n", err)
 		return
 	}
-
 	cfg.LocalPath = filepath.Dir(exePath)
 	log.Printf("the dir to the exe file: %s\n", cfg.LocalPath)
+
+	logFilePathForViewer := cfg.LocalPath + "\\" + cfg.LogFileName + "_" + cfg.LocalExeFilename[:len(cfg.LocalExeFilename)-4] + cfg.LogFileExt
+	log.Printf("logFilePathForViewer: %s\n", logFilePathForViewer)
+	logFilePathForLauncher := cfg.LocalPath + "\\" + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
+	log.Printf("logFilePathForLauncher: %s\n", logFilePathForLauncher)
+
+	err = logger.CheckLogFile(logFilePathForViewer)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = logger.CheckLogFileSize(logFilePathForViewer, logFilePathForLauncher, cfg.LogFileSize)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	viewerLogFile, err := logger.OpenLogFile(logFilePathForViewer)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer viewerLogFile.Close()
+	log.SetOutput(viewerLogFile)
+	log.Printf("the path of the config is: %s", cfgPath)
 
 	a := app.New()
 
@@ -166,9 +181,11 @@ func main() {
 	connStr := widget.NewLabel("")
 
 	checkboxLocalMode.SetChecked(cfg.LocalMode)
+	log.Printf("checkboxLocalMode is set according to the configuration")
 	checkboxYearDB.SetChecked(cfg.YearDB)
+	log.Printf("checkboxYearDB is set according to the configuration")
 	loginButton := widget.NewButton("login", func() {
-		db, connectionString, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text, cfg.LocalMode, cfg.YearDB)
+		db, connectionString, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text)
 		if err != nil {
 			log.Println(err)
 			errDialog := dialog.NewInformation("error", err.Error(), login)

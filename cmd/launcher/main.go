@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"indicator-tables-viewer/internal/config"
 	"indicator-tables-viewer/internal/downloader"
+	"indicator-tables-viewer/internal/logger"
 	"io"
 	"log"
 	"net/http"
@@ -51,12 +52,6 @@ func NewLauncher(cfg *config.Config) *Launcher {
 
 func main() {
 	var exeDir string
-	logFile, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatal("error occurred while opening logfile:", err)
-	}
-	defer logFile.Close()
-	log.SetOutput(logFile)
 
 	if os.Getenv("CFG_PATH") == "" {
 		cfgPath = "config/config_prod.toml"
@@ -69,13 +64,14 @@ func main() {
 	if *cfgPathFlag != "" {
 		cfgPath = *cfgPathFlag
 	}
-
 	log.Printf("the path of the config is: %s", cfgPath)
 	log.Printf("%s: %s", configPath, cfgPath)
 	cfg := config.MustLoad(cfgPath)
 
+	var logFilePathForLauncher string
 	if cfg.Env == "dev" {
 		exeDir = cfg.CodePath
+		logFilePathForLauncher = exeDir + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
 	} else if cfg.Env == "prod" {
 		exePath, err := os.Executable()
 		if err != nil {
@@ -84,8 +80,20 @@ func main() {
 		}
 		exeDir = filepath.Dir(exePath)
 		log.Printf("exeDir variable: %s", exeDir)
+		logFilePathForLauncher = exeDir + "\\" + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
 	}
 
+	err := logger.CheckLogFile(logFilePathForLauncher)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	logFile, err := logger.OpenLogFile(logFilePathForLauncher)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logFile.Close()
+	log.SetOutput(logFile)
 	l := NewLauncher(cfg)
 	a := app.New()
 	update := a.NewWindow(title)
@@ -175,8 +183,8 @@ func (l *Launcher) checkUpdate() (bool, error) {
 		return false, err
 	}
 
-	log.Printf("%s %v\n", remoteByte, string(remoteVer))
-	log.Printf("%s %v\n", localByte, string(localVer))
+	log.Printf("%s %v", remoteByte, string(remoteVer))
+	log.Printf("%s %v", localByte, string(localVer))
 	// removing non-digit characters
 	regex := regexp.MustCompile("[^0-9]+")
 	cleanedRemoteStr, cleanedLocalStr := regex.ReplaceAllString(string(remoteVer), ""), regex.ReplaceAllString(string(localVer), "")

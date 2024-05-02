@@ -8,6 +8,7 @@ import (
 
 // CheckLogFile checks and creates log file if not exist by LogFileCreate function
 func CheckLogFile(filepath string) error {
+
 	_, err := os.Stat(filepath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -16,6 +17,17 @@ func CheckLogFile(filepath string) error {
 				return err
 			}
 		} else {
+			return err
+		}
+	}
+	return nil
+}
+
+func CheckLogDir(dirpath string) error {
+	_, err := os.Stat(dirpath)
+	if os.IsNotExist(err) {
+		err = os.Mkdir(dirpath, 0755)
+		if err != nil {
 			return err
 		}
 	}

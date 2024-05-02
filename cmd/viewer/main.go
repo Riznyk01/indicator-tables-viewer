@@ -64,31 +64,31 @@ func main() {
 	cfg.LocalPath = filepath.Dir(exePath)
 	log.Printf("the dir to the exe file: %s\n", cfg.LocalPath)
 
-	logFilePathForViewer := cfg.LocalPath + "\\" + cfg.LogFileName + "_" + cfg.LocalExeFilename[:len(cfg.LocalExeFilename)-4] + cfg.LogFileExt
-	log.Printf("logFilePathForViewer: %s\n", logFilePathForViewer)
-	logFilePathForLauncher := cfg.LocalPath + "\\" + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
-	log.Printf("logFilePathForLauncher: %s\n", logFilePathForLauncher)
+	logFilePathForViewer := cfg.LocalPath + "\\" + cfg.LogDirName + cfg.LogFileName + "_" + cfg.LocalExeFilename[:len(cfg.LocalExeFilename)-4] + cfg.LogFileExt
+	logFilePathForLauncher := cfg.LocalPath + "\\" + cfg.LogDirName + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
 
 	err = logger.CheckLogFile(logFilePathForViewer)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf(err.Error())
 	}
 
 	err = logger.CheckLogFileSize(logFilePathForViewer, logFilePathForLauncher, cfg.LogFileSize)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf(err.Error())
 	}
 
 	viewerLogFile, err := logger.OpenLogFile(logFilePathForViewer)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf(err.Error())
 	}
 	defer viewerLogFile.Close()
 	log.SetOutput(viewerLogFile)
+	log.Printf("logFilePathForViewer: %s\n", logFilePathForViewer)
+	log.Printf("logFilePathForLauncher: %s\n", logFilePathForLauncher)
 	log.Printf("the path of the config is: %s", cfgPath)
 
 	a := app.New()
-
+	log.Printf("resources path: %s", cfg.LocalPath+cfg.IconPath)
 	r, _ := loadRecourseFromPath(cfg.LocalPath + cfg.IconPath)
 	a.SetIcon(r)
 
@@ -108,7 +108,7 @@ func main() {
 		newSettingsWindow(a, cfg, cfgPath, usernameEntry)
 	})
 
-	log.Printf("viewer.exe path to the ver file: %s\n", cfg.CodePath+cfg.VerLocalFilePath)
+	log.Printf("path to the ver file: %s\n", cfg.CodePath+cfg.VerLocalFilePath)
 	localVer, err := os.ReadFile(cfg.CodePath + cfg.VerLocalFilePath)
 	if err != nil {
 		log.Printf("%s %s: %v", text.ErrOccur, readingVer, err)
@@ -123,7 +123,9 @@ func main() {
 	second := localVerStr[12:14]
 
 	versionLabel := widget.NewLabel("")
-	versionLabel.SetText("version: " + fmt.Sprintf("%s.%s.%s %s:%s:%s\n%s mode", year, month, day, hour, minute, second, cfg.Env))
+	verInfo := fmt.Sprintf("%s.%s.%s %s:%s:%s\n%s mode", year, month, day, hour, minute, second, cfg.Env)
+	log.Printf(verInfo)
+	versionLabel.SetText("version: " + verInfo)
 
 	username := container.NewGridWithColumns(4, widget.NewLabel(""), usernameEntry, passwordEntry, widget.NewLabel(""))
 
@@ -134,23 +136,25 @@ func main() {
 		if checked {
 			cfg.LocalMode = true
 			dbPath.SetText("in program folder")
+			log.Printf("dbPath: %s", dbPath.Text)
 			err = config.UpdateConfig(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
 				log.Println(err)
 			} else {
-				log.Printf("LocalModeCheckbox state in the config has been updated (%v)", cfg.LocalMode)
+				log.Printf("LocalModeCheckbox state in the config file has been updated (%v)", cfg.LocalMode)
 			}
 		} else {
 			cfg.LocalMode = false
 			dbPath.SetText(cfg.RemotePathToDb)
+			log.Printf("dbPath: %s", dbPath.Text)
 			err = config.UpdateConfig(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
 			} else {
-				log.Printf("LocalModeCheckbox state in the config has been updated (%v)", cfg.LocalMode)
+				log.Printf("LocalModeCheckbox state in the config file has been updated (%v)", cfg.LocalMode)
 			}
 		}
 	})
@@ -164,7 +168,7 @@ func main() {
 				errDialog.Show()
 				log.Println(err)
 			} else {
-				log.Printf("checkboxYearDB state in the config has been updated (%v)", cfg.YearDB)
+				log.Printf("checkboxYearDB state in the config file has been updated (%v)", cfg.YearDB)
 			}
 		} else {
 			cfg.YearDB = false
@@ -173,7 +177,7 @@ func main() {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
 			} else {
-				log.Printf("checkboxYearDB state in the config has been updated (%v)", cfg.YearDB)
+				log.Printf("checkboxYearDB state in the config file has been updated (%v)", cfg.YearDB)
 			}
 		}
 	})
@@ -204,7 +208,6 @@ func main() {
 	settingsRow := container.NewGridWithColumns(5, versionLabel, widget.NewLabel(""), checkboxLocalMode, checkboxYearDB, settingsButton)
 
 	loginW := container.NewGridWithRows(4, textRow, username, checkRow, settingsRow)
-
 	login.SetContent(loginW)
 	login.Resize(fyne.NewSize(1000, 100))
 	login.CenterOnScreen()

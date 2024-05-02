@@ -39,6 +39,7 @@ type Config struct {
 	RemoteQuarterDbDir  string        `toml:"remote_quarter_db_dir"`
 	YearDB              bool          `toml:"year_db"`
 	LogFileName         string        `toml:"log_file_name"`
+	LogDirName          string        `toml:"log_dir_name"`
 	LogFileSize         int64         `toml:"log_file_size"`
 }
 

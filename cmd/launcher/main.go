@@ -68,10 +68,11 @@ func main() {
 	log.Printf("%s: %s", configPath, cfgPath)
 	cfg := config.MustLoad(cfgPath)
 
-	var logFilePathForLauncher string
+	var logFilePathForLauncher, logDirPath string
 	if cfg.Env == "dev" {
 		exeDir = cfg.CodePath
-		logFilePathForLauncher = exeDir + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
+		logFilePathForLauncher = exeDir + cfg.LogDirName + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
+		logDirPath = cfg.CodePath + cfg.LogDirName
 	} else if cfg.Env == "prod" {
 		exePath, err := os.Executable()
 		if err != nil {
@@ -80,10 +81,16 @@ func main() {
 		}
 		exeDir = filepath.Dir(exePath)
 		log.Printf("exeDir variable: %s", exeDir)
-		logFilePathForLauncher = exeDir + "\\" + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
+		logFilePathForLauncher = exeDir + "\\" + cfg.LogDirName + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
+		logDirPath = exeDir + "\\" + cfg.LogDirName
 	}
 
-	err := logger.CheckLogFile(logFilePathForLauncher)
+	err := logger.CheckLogDir(logDirPath)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	err = logger.CheckLogFile(logFilePathForLauncher)
 	if err != nil {
 		log.Fatal(err)
 	}

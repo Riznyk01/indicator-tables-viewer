@@ -1,20 +1,21 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/go-vgo/robotgo"
+	"github.com/go-logr/logr"
 	_ "github.com/nakagami/firebirdsql"
-	"github.com/tealeg/xlsx"
 	"indicator-tables-viewer/internal/config"
-	"indicator-tables-viewer/internal/logger"
+	"indicator-tables-viewer/internal/filemanager"
+	"indicator-tables-viewer/internal/formatter"
+	"indicator-tables-viewer/internal/logg"
 	"indicator-tables-viewer/internal/repository"
 	"indicator-tables-viewer/internal/text"
+	"indicator-tables-viewer/internal/ui"
 	"log"
 	"os"
 	"path/filepath"
@@ -26,31 +27,6 @@ const (
 	readingVer = "reading local ver info file"
 )
 
-type Resource interface {
-	Name() string
-	Content() []byte
-}
-
-type StaticResource struct {
-	StaticName    string
-	StaticContent []byte
-}
-
-func NewStaticResource(name string, content []byte) *StaticResource {
-	return &StaticResource{
-		StaticName:    name,
-		StaticContent: content,
-	}
-}
-
-func (r *StaticResource) Name() string {
-	return r.StaticName
-}
-
-func (r *StaticResource) Content() []byte {
-	return r.StaticContent
-}
-
 func main() {
 
 	cfgPath := os.Getenv("CONFIG_PATH")
@@ -58,37 +34,18 @@ func main() {
 
 	exePath, err := os.Executable()
 	if err != nil {
-		log.Printf("error occurred while receiving exe file: %v\n", err)
-		return
+		log.Print(err)
 	}
 	cfg.LocalPath = filepath.Dir(exePath)
-	log.Printf("the dir to the exe file: %s\n", cfg.LocalPath)
+	logger := logg.SetupLogger(cfg)
 
-	logFilePathForViewer := cfg.LocalPath + "\\" + cfg.LogDirName + cfg.LogFileName + "_" + cfg.LocalExeFilename[:len(cfg.LocalExeFilename)-4] + cfg.LogFileExt
-	logFilePathForLauncher := cfg.LocalPath + "\\" + cfg.LogDirName + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
+	logger.V(1).Info("viewer started")
 
-	err = logger.CheckLogFile(logFilePathForViewer)
-	if err != nil {
-		log.Printf(err.Error())
-	}
-
-	err = logger.CheckLogFileSize(logFilePathForViewer, logFilePathForLauncher, cfg.LogFileSize)
-	if err != nil {
-		log.Printf(err.Error())
-	}
-
-	viewerLogFile, err := logger.OpenLogFile(logFilePathForViewer)
-	if err != nil {
-		log.Printf(err.Error())
-	}
-	defer viewerLogFile.Close()
-	log.SetOutput(viewerLogFile)
-	log.Printf("logFilePathForViewer: %s\n", logFilePathForViewer)
-	log.Printf("logFilePathForLauncher: %s\n", logFilePathForLauncher)
-	log.Printf("the path of the config is: %s", cfgPath)
+	logger.V(1).Info("the dir to the exe file", "path", cfg.LocalPath)
+	logger.V(1).Info("", "the path of the config is", cfgPath)
 
 	a := app.New()
-	log.Printf("resources path: %s", cfg.LocalPath+cfg.IconPath)
+	logger.V(1).Info("resources", "path", cfg.LocalPath+cfg.IconPath)
 	r, _ := loadRecourseFromPath(cfg.LocalPath + cfg.IconPath)
 	a.SetIcon(r)
 
@@ -108,23 +65,15 @@ func main() {
 		newSettingsWindow(a, cfg, cfgPath, usernameEntry)
 	})
 
-	log.Printf("path to the ver file: %s\n", cfg.CodePath+cfg.VerLocalFilePath)
+	logger.V(1).Info("path to the ver file", "path", cfg.CodePath+cfg.VerLocalFilePath)
 	localVer, err := os.ReadFile(cfg.CodePath + cfg.VerLocalFilePath)
 	if err != nil {
-		log.Printf("%s %s: %v", text.ErrOccur, readingVer, err)
+		logger.Error(err, text.ErrOccur, readingVer)
 	}
 
-	localVerStr := string(localVer)
-	year := localVerStr[:4]
-	month := localVerStr[4:6]
-	day := localVerStr[6:8]
-	hour := localVerStr[8:10]
-	minute := localVerStr[10:12]
-	second := localVerStr[12:14]
-
 	versionLabel := widget.NewLabel("")
-	verInfo := fmt.Sprintf("%s.%s.%s %s:%s:%s\n%s mode", year, month, day, hour, minute, second, cfg.Env)
-	log.Printf(verInfo)
+	verInfo := formatter.VersionFormatter(localVer, cfg.Env)
+	logger.V(1).Info("", "version", verInfo)
 	versionLabel.SetText("version: " + verInfo)
 
 	username := container.NewGridWithColumns(4, widget.NewLabel(""), usernameEntry, passwordEntry, widget.NewLabel(""))
@@ -136,25 +85,25 @@ func main() {
 		if checked {
 			cfg.LocalMode = true
 			dbPath.SetText("in program folder")
-			log.Printf("dbPath: %s", dbPath.Text)
+			logger.V(1).Info("db", "path", dbPath.Text)
 			err = config.UpdateConfig(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
-				log.Println(err)
+				logger.Error(err, "")
 			} else {
-				log.Printf("LocalModeCheckbox state in the config file has been updated (%v)", cfg.LocalMode)
+				logger.V(1).Info("LocalModeCheckbox state in the config file has been updated", "checkbox state", cfg.LocalMode)
 			}
 		} else {
 			cfg.LocalMode = false
 			dbPath.SetText(cfg.RemotePathToDb)
-			log.Printf("dbPath: %s", dbPath.Text)
+			logger.V(1).Info("db", "path", dbPath.Text)
 			err = config.UpdateConfig(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
 			} else {
-				log.Printf("LocalModeCheckbox state in the config file has been updated (%v)", cfg.LocalMode)
+				logger.V(1).Info("LocalModeCheckbox state in the config file has been updated", "checkbox state", cfg.LocalMode)
 			}
 		}
 	})
@@ -166,9 +115,9 @@ func main() {
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
-				log.Println(err)
+				logger.Error(err, "")
 			} else {
-				log.Printf("checkboxYearDB state in the config file has been updated (%v)", cfg.YearDB)
+				logger.V(1).Info("checkboxYearDB state in the config file has been updated", "checkbox state", cfg.YearDB)
 			}
 		} else {
 			cfg.YearDB = false
@@ -177,7 +126,7 @@ func main() {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
 				errDialog.Show()
 			} else {
-				log.Printf("checkboxYearDB state in the config file has been updated (%v)", cfg.YearDB)
+				logger.V(1).Info("checkboxYearDB state in the config file has been updated", "checkbox state", cfg.YearDB)
 			}
 		}
 	})
@@ -185,21 +134,21 @@ func main() {
 	connStr := widget.NewLabel("")
 
 	checkboxLocalMode.SetChecked(cfg.LocalMode)
-	log.Printf("checkboxLocalMode is set according to the configuration")
+	logger.V(1).Info("checkboxLocalMode is set according to the configuration")
 	checkboxYearDB.SetChecked(cfg.YearDB)
-	log.Printf("checkboxYearDB is set according to the configuration")
+	logger.V(1).Info("checkboxYearDB is set according to the configuration")
 	loginButton := widget.NewButton("login", func() {
 		db, connectionString, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text)
 		if err != nil {
-			log.Println(err)
+			logger.Error(err, "")
 			errDialog := dialog.NewInformation("error", err.Error(), login)
 			errDialog.Show()
 		} else {
 			login.Hide()
-			log.Printf("connected")
+			logger.V(1).Info("connected")
 			connStr.SetText("connection: " + connectionString)
 			repo := repository.NewRepository(db)
-			newViewerWindow(a, repo, cfg, connStr)
+			newViewerWindow(a, logger, repo, cfg, connStr)
 		}
 	})
 
@@ -215,30 +164,6 @@ func main() {
 	a.Run()
 }
 
-func loadRecourseFromPath(path string) (Resource, error) {
-
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open the file %v", err)
-	}
-	defer file.Close()
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		log.Println("error occurred while get information about the file:", err)
-		return nil, err
-	}
-	size := fileInfo.Size()
-
-	iconData := make([]byte, size)
-	_, err = file.Read(iconData)
-	if err != nil {
-		log.Println("error occurred while reading the file:", err)
-		return nil, err
-	}
-	name := filepath.Base(path)
-	return NewStaticResource(name, iconData), nil
-}
 func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernameEntry *widget.Entry) {
 	settings := app.NewWindow("settings")
 	settings.Resize(fyne.NewSize(500, 100))
@@ -355,12 +280,12 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	settings.SetContent(settingsRows)
 	settings.Show()
 }
-func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Config, connStr *widget.Label) {
+func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Repository, cfg *config.Config, connStr *widget.Label) {
 	log.Printf("Main window is started")
 	var tableName string
 	statData := newData()
 
-	w, h := setResolution()
+	w, h := ui.SetResolution()
 	windowSize := fyne.NewSize(w, h)
 	tableSize := fyne.NewSize(w, h)
 
@@ -375,14 +300,14 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 	dropdown := widget.NewSelect(tablesList, func(selected string) {
 		tableName = selected[:7]
 		formName := "F" + selected[1:3]
-		log.Printf("%s selected", tableName)
-		log.Printf("%s selected", formName)
+		logger.V(1).Info("selected", "table name", tableName)
+		logger.V(1).Info("selected", "table name", formName)
 		// get where columns names is located
 		colNameLocation, _ := repo.GetColNameLocation(tableName)
 		// get the tables' header
 		statData[0], _ = repo.GetHeader(colNameLocation)
 
-		lineSplit(statData)
+		formatter.LineSplit(statData)
 		// set the headers' height
 		headerHeight := rowHeightCount(statData[0])
 		t.SetRowHeight(0, headerHeight)
@@ -426,7 +351,7 @@ func newViewerWindow(app fyne.App, repo *repository.Repository, cfg *config.Conf
 	info := widget.NewLabel("")
 
 	exportFileButton := widget.NewButton("export to excel", func() {
-		err := exportToExcel(statData, tableName, cfg.XlsExportPath)
+		err := filemanager.ExportToExcel(statData, tableName, cfg.XlsExportPath)
 		if err != nil {
 			info.SetText(err.Error())
 			<-time.After(cfg.InfoTimeout)
@@ -474,9 +399,9 @@ func rowHeightCount(rowToCount []string) float32 {
 		if q > count {
 			count = q
 		}
-		log.Printf("the filed to count is: %v, the field len is: %v\n", count, len(field))
+		//log.Printf("the filed to count is: %v, the field len is: %v\n", count, len(field))
 	}
-	log.Printf("quanity of the \\n is: %v\n", count)
+	//log.Printf("quanity of the \\n is: %v\n", count)
 	if count == 0 {
 		return 24
 	}
@@ -491,47 +416,12 @@ func setColumnWidth(t *widget.Table, statData [][]string) {
 		var maxLen int
 		for r := 0; r < len(statData); r++ {
 			if len(statData[r][c]) > maxLen {
-				maxLen = maxLengthAfterSplit(statData[r][c])
+				maxLen = formatter.MaxLengthAfterSplit(statData[r][c])
 			}
 		}
 		log.Printf("max text len for the %v column is: %v", c, maxLen)
 		t.SetColumnWidth(c, float32(maxLen)*7)
 	}
-}
-
-// lineSplit adds the "\n" to the headers' rows
-func lineSplit(data [][]string) {
-	every := 7
-	for n, colName := range data[0] {
-		var result string
-		cnt := 0
-		for i, char := range colName {
-			result += string(char)
-			cnt++
-			if ((i+1) > every || (i+1) < 2*every) && char == ' ' && cnt > 8 {
-				result += "\n"
-				cnt = 0
-			}
-		}
-		data[0][n] = strings.ReplaceAll(result, "|", "\n")
-	}
-}
-
-func maxLengthAfterSplit(str string) int {
-	substrings := strings.Split(str, "\n")
-	maxLength := 0
-
-	if strings.Contains(str, "\n") {
-		for _, sub := range substrings {
-			if len(sub) > maxLength {
-				maxLength = len(sub)
-			}
-		}
-	} else {
-		maxLength = len(str)
-	}
-
-	return maxLength
 }
 
 func newData() [][]string {
@@ -561,56 +451,4 @@ func newTable(statData [][]string) *widget.Table {
 		},
 	)
 	return tbl
-}
-
-func setResolution() (w, h float32) {
-	width, height := robotgo.GetScreenSize()
-	if width > 1920 && height > 1080 {
-		w = 0.5 * float32(width)
-		h = 0.4 * float32(height)
-		return w, h
-	}
-	w = 0.8 * float32(width)
-	h = 0.7 * float32(height)
-	return w, h
-}
-
-func exportToExcel(data [][]string, tableName string, exportPath string) error {
-	file := xlsx.NewFile()
-	sheet, err := file.AddSheet("Sheet1")
-	if err != nil {
-		return errors.New(fmt.Sprintf("Error creating sheet: %v\n", err))
-	}
-
-	for _, row := range data {
-		newRow := sheet.AddRow()
-		for _, cell := range row {
-			newCell := newRow.AddCell()
-			newCell.Value = cell
-			newCell.GetStyle().Alignment.WrapText = true
-		}
-	}
-
-	log.Println("File saved successfully.")
-	for s := 0; s < sheet.MaxCol; s++ {
-		sheet.Col(s).Width = float64(30)
-	}
-
-	currentTime := time.Now()
-	currentDateTime := currentTime.Format("2006-01-02_15-04-05")
-	filename := tableName + "_" + currentDateTime + ".xlsx"
-
-	var fullPath string
-
-	if exportPath == "" {
-		fullPath = filename
-	} else {
-		fullPath = filepath.Join(exportPath, filename)
-	}
-
-	err = file.Save(fullPath)
-	if err != nil {
-		return errors.New(fmt.Sprintf("error occurred while saving xls file: %v\n", err))
-	}
-	return nil
 }

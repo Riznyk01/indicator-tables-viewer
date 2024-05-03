@@ -6,9 +6,10 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/widget"
+	"github.com/go-logr/logr"
 	"indicator-tables-viewer/internal/config"
 	"indicator-tables-viewer/internal/downloader"
-	"indicator-tables-viewer/internal/logger"
+	"indicator-tables-viewer/internal/logg"
 	"io"
 	"log"
 	"net/http"
@@ -41,23 +42,21 @@ const (
 var cfgPath string
 
 type Launcher struct {
-	cfg *config.Config
+	cfg    *config.Config
+	logger *logr.Logger
 }
 
-func NewLauncher(cfg *config.Config) *Launcher {
+func NewLauncher(cfg *config.Config, logger *logr.Logger) *Launcher {
 	return &Launcher{
-		cfg: cfg,
+		cfg:    cfg,
+		logger: logger,
 	}
 }
 
 func main() {
 	var exeDir string
 
-	if os.Getenv("CFG_PATH") == "" {
-		cfgPath = "config/config_prod.toml"
-	} else {
-		cfgPath = os.Getenv("CFG_PATH")
-	}
+	cfgPath = os.Getenv("CFG_PATH")
 
 	cfgPathFlag := flag.String("CFG_PATH", "", "path to the config")
 	flag.Parse()
@@ -68,11 +67,8 @@ func main() {
 	log.Printf("%s: %s", configPath, cfgPath)
 	cfg := config.MustLoad(cfgPath)
 
-	var logFilePathForLauncher, logDirPath string
 	if cfg.Env == "dev" {
 		exeDir = cfg.CodePath
-		logFilePathForLauncher = exeDir + cfg.LogDirName + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
-		logDirPath = cfg.CodePath + cfg.LogDirName
 	} else if cfg.Env == "prod" {
 		exePath, err := os.Executable()
 		if err != nil {
@@ -81,27 +77,11 @@ func main() {
 		}
 		exeDir = filepath.Dir(exePath)
 		log.Printf("exeDir variable: %s", exeDir)
-		logFilePathForLauncher = exeDir + "\\" + cfg.LogDirName + cfg.LogFileName + "_" + cfg.LauncherExeFilename[:len(cfg.LauncherExeFilename)-4] + cfg.LogFileExt
-		logDirPath = exeDir + "\\" + cfg.LogDirName
 	}
 
-	err := logger.CheckLogDir(logDirPath)
-	if err != nil {
-		log.Printf(err.Error())
-	}
-
-	err = logger.CheckLogFile(logFilePathForLauncher)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	logFile, err := logger.OpenLogFile(logFilePathForLauncher)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer logFile.Close()
-	log.SetOutput(logFile)
-	l := NewLauncher(cfg)
+	logger := logg.SetupLogger(cfg)
+	logger.V(1).Info("launcher started")
+	l := NewLauncher(cfg, logger)
 	a := app.New()
 	update := a.NewWindow(title)
 	info := widget.NewLabel("start")
@@ -116,24 +96,23 @@ func main() {
 			if ex && err == nil {
 
 				info.SetText(updateExists)
-				log.Printf(updateExists)
+				logger.V(1).Info(updateExists)
 
 				err = downloader.Download(cfg.UpdatePath, cfg.RemoteExeFilename, cfg.CodePath+cfg.LocalExeFilename)
 				if err != nil {
-					log.Printf("%s %s: %v", errWhileDownloading, cfg.RemoteExeFilename, err)
+					logger.V(1).Error(err, errWhileDownloading+cfg.RemoteExeFilename)
 					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.RemoteExeFilename, err))
 				} else {
 					err = downloader.Download(cfg.UpdatePath, cfg.VerRemoteFilePath, cfg.CodePath+cfg.DownloadedVerFile)
 					if err != nil {
-						log.Printf("%s %s: %v", errWhileDownloading, cfg.VerRemoteFilePath, err)
+						logger.V(1).Error(err, errWhileDownloading+cfg.VerRemoteFilePath)
 						info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.VerRemoteFilePath, err))
 					} else {
 						err = os.Rename("ver_remote", "ver")
 						if err != nil {
 							log.Fatal(err)
 						}
-
-						log.Printf(updatedSuccessfully)
+						logger.V(1).Info(updatedSuccessfully)
 						info.SetText(updatedSuccessfully)
 					}
 				}
@@ -167,43 +146,43 @@ func (l *Launcher) checkUpdate() (bool, error) {
 
 	file, err := os.Create(l.cfg.CodePath + l.cfg.DownloadedVerFile)
 	if err != nil {
-		log.Printf("%s %s: %v", errOccur, newInfoFile, err)
+		l.logger.V(1).Error(err, errOccur, newInfoFile)
 		return false, err
 	}
 	defer file.Close()
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		log.Printf("%s %s: %v", errOccur, savingVer, err)
+		l.logger.V(1).Error(err, errOccur, savingVer)
 		return false, err
 	}
 
 	localVer, err := os.ReadFile(l.cfg.CodePath + l.cfg.VerLocalFilePath)
 	if err != nil {
-		log.Printf("%s %s: %v", errOccur, readingVer, err)
+		l.logger.V(1).Error(err, errOccur, readingVer)
 		return false, err
 	}
 
 	remoteVer, err := os.ReadFile(l.cfg.CodePath + l.cfg.DownloadedVerFile)
 	if err != nil {
-		log.Printf("%s %s: %v", errOccur, readingNewVer, err)
+		l.logger.V(1).Error(err, errOccur, readingNewVer)
 		return false, err
 	}
 
-	log.Printf("%s %v", remoteByte, string(remoteVer))
-	log.Printf("%s %v", localByte, string(localVer))
+	l.logger.V(1).Info(remoteByte + string(remoteVer))
+	l.logger.V(1).Info(localByte + string(remoteVer))
 	// removing non-digit characters
 	regex := regexp.MustCompile("[^0-9]+")
 	cleanedRemoteStr, cleanedLocalStr := regex.ReplaceAllString(string(remoteVer), ""), regex.ReplaceAllString(string(localVer), "")
 
 	remote, err := strconv.Atoi(cleanedRemoteStr)
 	if err != nil {
-		log.Printf("%s: %v", remoteConvErr, err)
+		l.logger.V(1).Error(err, remoteConvErr)
 	}
 	log.Printf("remote int %v", remote)
 	local, err := strconv.Atoi(cleanedLocalStr)
 	if err != nil {
-		log.Printf("%s: %v", localConvErr, err)
+		l.logger.Error(err, localConvErr)
 	}
 	log.Printf("local int %v", local)
 	return remote > local, nil
@@ -219,7 +198,7 @@ func (l *Launcher) run(exeDir string) {
 	cmd = exec.Command(exeDir + "\\" + l.cfg.LocalExeFilename)
 	cmd.Env = append(os.Environ(), "CONFIG_PATH="+cfgPath)
 	if err := cmd.Start(); err != nil {
-		log.Printf("%s starting %s: %v", errOccur, l.cfg.LocalExeFilename, err)
+		l.logger.Error(err, errOccur+l.cfg.LocalExeFilename)
 		return
 	}
 }

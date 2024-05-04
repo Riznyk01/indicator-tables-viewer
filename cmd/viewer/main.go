@@ -86,6 +86,7 @@ func main() {
 			cfg.LocalMode = true
 			dbPath.SetText("in program folder")
 			logger.V(1).Info("db", "path", dbPath.Text)
+			logger.V(1).Info("config to update", "cfg", cfg)
 			err = config.UpdateConfig(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
@@ -98,6 +99,7 @@ func main() {
 			cfg.LocalMode = false
 			dbPath.SetText(cfg.RemotePathToDb)
 			logger.V(1).Info("db", "path", dbPath.Text)
+			logger.V(1).Info("config to update", "cfg", cfg)
 			err = config.UpdateConfig(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
@@ -111,6 +113,7 @@ func main() {
 	checkboxYearDB := widget.NewCheck("year db (qtr. if not)", func(checked bool) {
 		if checked {
 			cfg.YearDB = true
+			logger.V(1).Info("config to update", "cfg", cfg)
 			err = config.UpdateConfig(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)
@@ -121,6 +124,7 @@ func main() {
 			}
 		} else {
 			cfg.YearDB = false
+			logger.V(1).Info("config to update", "cfg", cfg)
 			err = config.UpdateConfig(cfg, cfgPath)
 			if err != nil {
 				errDialog := dialog.NewInformation("error", err.Error(), login)

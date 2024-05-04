@@ -10,9 +10,7 @@ import (
 	"indicator-tables-viewer/internal/config"
 	"indicator-tables-viewer/internal/downloader"
 	"indicator-tables-viewer/internal/logg"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,12 +19,13 @@ import (
 )
 
 const (
+	errOccur            = "error occurred while"
+	errWhileExtracting  = "extracting update files"
 	configPath          = "path to the configuration file"
 	updateExists        = "program update exists"
 	title               = "updates checker"
-	errWhileDownloading = "error occurred while downloading update"
+	errWhileDownloading = "downloading update"
 	updatedSuccessfully = "program update downloaded successfully.\nstarting the program."
-	errOccur            = "error occurred while"
 	loadingVer          = "loading ver info file"
 	savingVer           = "saving ver info file"
 	readingVer          = "reading local ver info file"
@@ -37,6 +36,8 @@ const (
 	remoteConvErr       = "remoteVer converting error"
 	localConvErr        = "localVer converting error"
 	failedExePath       = "failed to get executable path"
+	updateDoesntExists  = "update doesn't exist"
+	updateCheckingErr   = "update checking error"
 )
 
 var cfgPath string
@@ -80,6 +81,7 @@ func main() {
 	}
 
 	logger := logg.SetupLogger(cfg)
+	logger.V(1).Info("cfg", "cfg", cfg)
 	logger.V(1).Info("launcher started")
 	l := NewLauncher(cfg, logger)
 	a := app.New()
@@ -88,37 +90,42 @@ func main() {
 
 	if cfg.AutoUpdate {
 		go func() {
+			l.logger.V(1).Info(fmt.Sprintf("update URL %s/%s:", l.cfg.UpdateURL, l.cfg.VerRemoteFilePath))
+
+			err := downloader.Download(l.cfg.UpdateURL, l.cfg.VerRemoteFilePath, l.cfg.CodePath+l.cfg.DownloadedVerFile)
+			if err != nil {
+				l.logger.V(1).Error(err, errOccur+errWhileDownloading+l.cfg.VerRemoteFilePath)
+			}
 
 			ex, err := l.checkUpdate()
 			if err != nil {
 				info.SetText(err.Error())
+				logger.V(1).Error(err, fmt.Sprintf("%s", updateCheckingErr))
 			}
+			logger.V(1).Info("update", "exist", ex)
 			if ex && err == nil {
-
 				info.SetText(updateExists)
-				logger.V(1).Info(updateExists)
-
-				err = downloader.Download(cfg.UpdatePath, cfg.RemoteExeFilename, cfg.CodePath+cfg.LocalExeFilename)
+				err = downloader.Download(cfg.UpdateURL, cfg.UpdateArchName, cfg.CodePath+cfg.UpdateArchName)
 				if err != nil {
-					logger.V(1).Error(err, errWhileDownloading+cfg.RemoteExeFilename)
-					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.RemoteExeFilename, err))
+					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.UpdateArchName, err))
+					logger.V(1).Error(err, errOccur+errWhileDownloading+cfg.UpdateArchName)
 				} else {
-					err = downloader.Download(cfg.UpdatePath, cfg.VerRemoteFilePath, cfg.CodePath+cfg.DownloadedVerFile)
+					//err = filemanager.Unzip(cfg.CodePath+cfg.UpdateArchName, cfg.CodePath)
+					//if err != nil {
+					//	info.SetText(fmt.Sprintf("%s %s: %v", errOccur, errWhileExtracting, err))
+					//	logger.V(1).Error(err, errOccur+errWhileExtracting)
+					//}
+					err = os.Rename("ver_remote", "ver")
 					if err != nil {
-						logger.V(1).Error(err, errWhileDownloading+cfg.VerRemoteFilePath)
-						info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.VerRemoteFilePath, err))
-					} else {
-						err = os.Rename("ver_remote", "ver")
-						if err != nil {
-							log.Fatal(err)
-						}
-						logger.V(1).Info(updatedSuccessfully)
-						info.SetText(updatedSuccessfully)
+						log.Fatal(err)
 					}
+					info.SetText(fmt.Sprintf("%s", updatedSuccessfully))
+					logger.V(1).Info(updatedSuccessfully)
 				}
 				l.run(exeDir)
 				os.Exit(0)
 			} else {
+				logger.V(1).Info(updateDoesntExists)
 				l.run(exeDir)
 				if err != nil {
 					fmt.Printf(err.Error())
@@ -137,25 +144,6 @@ func main() {
 	a.Run()
 }
 func (l *Launcher) checkUpdate() (bool, error) {
-	resp, err := http.Get(l.cfg.UpdatePath + "/" + l.cfg.VerRemoteFilePath)
-	if err != nil {
-		log.Printf("%s %s: %v", errOccur, loadingVer, err)
-		return false, err
-	}
-	defer resp.Body.Close()
-
-	file, err := os.Create(l.cfg.CodePath + l.cfg.DownloadedVerFile)
-	if err != nil {
-		l.logger.V(1).Error(err, errOccur, newInfoFile)
-		return false, err
-	}
-	defer file.Close()
-
-	_, err = io.Copy(file, resp.Body)
-	if err != nil {
-		l.logger.V(1).Error(err, errOccur, savingVer)
-		return false, err
-	}
 
 	localVer, err := os.ReadFile(l.cfg.CodePath + l.cfg.VerLocalFilePath)
 	if err != nil {
@@ -169,8 +157,8 @@ func (l *Launcher) checkUpdate() (bool, error) {
 		return false, err
 	}
 
+	l.logger.V(1).Info(localByte + string(localVer))
 	l.logger.V(1).Info(remoteByte + string(remoteVer))
-	l.logger.V(1).Info(localByte + string(remoteVer))
 	// removing non-digit characters
 	regex := regexp.MustCompile("[^0-9]+")
 	cleanedRemoteStr, cleanedLocalStr := regex.ReplaceAllString(string(remoteVer), ""), regex.ReplaceAllString(string(localVer), "")

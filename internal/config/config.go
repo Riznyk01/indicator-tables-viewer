@@ -21,13 +21,13 @@ type Config struct {
 	WindowWidth         float32       `toml:"window_width"`
 	InfoTimeout         time.Duration `toml:"info_timeout"`
 	LocalMode           bool          `toml:"local_mode"`
-	UpdatePath          string        `toml:"update_path"`
+	UpdateURL           string        `toml:"update_url"`
 	AutoUpdate          bool          `toml:"auto_update"`
 	XlsExportPath       string        `toml:"excel_export_path"`
 	IconPath            string        `toml:"icon_path"`
 	VerRemoteFilePath   string        `toml:"path_to_remote_ver_file"`
 	VerLocalFilePath    string        `toml:"path_to_ver_file"`
-	RemoteExeFilename   string        `toml:"remote_exe_filename"`
+	UpdateArchName      string        `toml:"update_arch_name"`
 	LocalExeFilename    string        `toml:"local_exe_filename"`
 	LauncherExeFilename string        `toml:"launcher_exe_filename"`
 	LogFileExt          string        `toml:"log_file_extension"`

@@ -14,7 +14,7 @@ func Download(URL, fileName, destinationPath string) error {
 	fmt.Printf("%s downloading started: URL=%s, fileName=%s, destinationPath=%s\n",
 		fc, URL, fileName, destinationPath)
 
-	resp, err := http.Get(URL + "/" + fileName)
+	resp, err := http.Get(URL + fileName)
 	if err != nil {
 		log.Printf("%s %s: %v", text.ErrOccur, text.DownUpd, err)
 		return err

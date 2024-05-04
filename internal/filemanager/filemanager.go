@@ -1,9 +1,11 @@
 package filemanager
 
 import (
+	"archive/zip"
 	"errors"
 	"fmt"
 	"github.com/tealeg/xlsx"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -59,6 +61,42 @@ func CheckLogFileSize(logFilePath string, size int64) error {
 	if fileInfo.Size() > size {
 		if err = os.Remove(logFilePath); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+func Unzip(zipFile string, dest string) error {
+	r, err := zip.OpenReader(zipFile)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	//os.MkdirAll(dest, 0755)
+
+	for _, f := range r.File {
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+
+		path := filepath.Join(dest, f.Name)
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(path, f.Mode())
+		} else {
+			f, err := os.OpenFile(
+				path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

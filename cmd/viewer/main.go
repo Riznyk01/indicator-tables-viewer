@@ -44,6 +44,9 @@ func main() {
 	logger.V(1).Info("the dir to the exe file", "path", cfg.LocalPath)
 	logger.V(1).Info("", "the path of the config is", cfgPath)
 
+	err = filemanager.MakeDirIfNotExist(cfg.XlsExportPath)
+	logger.Error(err, "")
+
 	a := app.New()
 	logger.V(1).Info("resources", "path", cfg.LocalPath+cfg.IconPath)
 	r, _ := loadRecourseFromPath(cfg.LocalPath + cfg.IconPath)

@@ -1,13 +1,32 @@
-To run the program, run launcher.exe; it checks for updates and automatically updates the program if needed.  
-The launcher must be running with the CFG_PATH environment variable or with the CFG_PATH flag (the flag takes precedence over the environment variable).
-Flag or ENV is required.
+## Table of Contents
 
-If the program is updated by the launcher or if an update is not necessary, the launcher runs viewer.exe with  
-the CONFIG_PATH environment variable, which equals CFG_PATH flag or environment variable specified at launcher startup.
+- [Screenshots](#screenshots)
+- [Running the program](#running-the-program)
 
-Thanks to the code_path variable in the config, the launcher can be run from the IDE with full functionality in RUN  
-mode (without biuld). It can run viewer.exe at the end of its work from the code_path because in RUN mode in  
-the IDE, the program runs from the IDE TEMP directory which doesn't contain viewer.exe and resources.
+## Screenshots
 
-The LocalPath config variable is needed if the program works in local mode (database on the localhost in the  rpogram dir).
-In this case, the program determines from which directory it is run and uses the database and resources from its directory. Firebird must be installed in this case on the localhost.
+![Screenshot 1](screenshots/screenshot1.png)
+![Screenshot 2](screenshots/screenshot2.png)
+![Screenshot 3](screenshots/screenshot3.png)
+
+## Running the Program
+
+To run the program:
+
+1. Ensure that the CFG_PATH environment variable is set or specify the CFG_PATH flag.
+2. Execute launcher.exe.  
+
+The launcher automatically checks for updates and updates the program if necessary.
+If the program is updated or no update is required, the launcher executes viewer.exe using the CONFIG_PATH
+environment variable, which is equal to the CFG_PATH flag or environment variable specified at launcher
+startup.
+The code_path variable in the configuration allows the launcher to be run from the IDE with full
+functionality in RUN mode (without building). It can execute viewer.exe from the code_path because
+in RUN mode in the IDE, the program runs from the IDE TEMP directory, which doesn't contain viewer.exe
+and resources.  
+
+The LocalPath config variable is necessary if the program operates in local mode (database on the
+localhost in the program directory). In this scenario, the program determines the directory from
+which it is run and uses the database and resources from its directory. Firebird must be installed
+on the localhost in this case.
+

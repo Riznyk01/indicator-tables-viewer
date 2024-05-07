@@ -14,9 +14,11 @@
 To run the program:
 
 1. Ensure that the CFG_PATH environment variable is set or specify the CFG_PATH flag.
+   CFG_PATH is a full path to the config file in .toml format. 
 2. Execute launcher.exe.  
 
 The launcher automatically checks for updates and updates the program if necessary.
+Autoupdate is enabled if 'auto_update' is set to true in the config.toml file. 
 If the program is updated or no update is required, the launcher executes viewer.exe using the CONFIG_PATH
 environment variable, which is equal to the CFG_PATH flag or environment variable specified at launcher
 startup.

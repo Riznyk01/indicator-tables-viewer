@@ -85,8 +85,6 @@ func Unzip(zipFile string, dest string) error {
 	}
 	defer r.Close()
 
-	//os.MkdirAll(dest, 0755)
-
 	for _, f := range r.File {
 		rc, err := f.Open()
 		if err != nil {
@@ -94,7 +92,7 @@ func Unzip(zipFile string, dest string) error {
 		}
 		defer rc.Close()
 
-		path := filepath.Join(dest, f.Name)
+		path := dest + f.Name
 
 		if f.FileInfo().IsDir() {
 			os.MkdirAll(path, f.Mode())

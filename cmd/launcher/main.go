@@ -9,6 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	"indicator-tables-viewer/internal/config"
 	"indicator-tables-viewer/internal/downloader"
+	"indicator-tables-viewer/internal/filemanager"
 	"indicator-tables-viewer/internal/logg"
 	"log"
 	"os"
@@ -110,17 +111,20 @@ func main() {
 					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.UpdateArchName, err))
 					logger.V(1).Error(err, errOccur+errWhileDownloading+cfg.UpdateArchName)
 				} else {
-					//err = filemanager.Unzip(cfg.CodePath+cfg.UpdateArchName, cfg.CodePath)
-					//if err != nil {
-					//	info.SetText(fmt.Sprintf("%s %s: %v", errOccur, errWhileExtracting, err))
-					//	logger.V(1).Error(err, errOccur+errWhileExtracting)
-					//}
-					err = os.Rename("ver_remote", "ver")
+
+					err = filemanager.Unzip(cfg.CodePath+cfg.UpdateArchName, cfg.CodePath)
 					if err != nil {
-						log.Fatal(err)
+						info.SetText(fmt.Sprintf("%s %s: %v", errOccur, errWhileExtracting, err))
+						logger.V(1).Error(err, errOccur+errWhileExtracting)
+
+					} else {
+						err = os.Rename("ver_remote", "ver")
+						if err != nil {
+							log.Fatal(err)
+						}
+						info.SetText(fmt.Sprintf("%s", updatedSuccessfully))
+						logger.V(1).Info(updatedSuccessfully, "err while update", err)
 					}
-					info.SetText(fmt.Sprintf("%s", updatedSuccessfully))
-					logger.V(1).Info(updatedSuccessfully)
 				}
 				l.run(exeDir)
 				os.Exit(0)

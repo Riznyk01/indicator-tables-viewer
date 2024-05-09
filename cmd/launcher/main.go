@@ -69,9 +69,7 @@ func main() {
 	log.Printf("%s: %s", configPath, cfgPath)
 	cfg := config.MustLoad(cfgPath)
 
-	if cfg.Env == "dev" {
-		exeDir = cfg.CodePath
-	} else if cfg.Env == "prod" {
+	if cfg.Env == "prod" {
 		exePath, err := os.Executable()
 		if err != nil {
 			log.Printf("%s: %v", failedExePath, err)
@@ -89,11 +87,11 @@ func main() {
 	update := a.NewWindow(title)
 	info := widget.NewLabel("start")
 
-	if cfg.AutoUpdate {
+	if cfg.AutoUpdate && cfg.Env == "prod" {
 		go func() {
 			l.logger.V(1).Info(fmt.Sprintf("update URL %s/%s:", l.cfg.UpdateURL, l.cfg.VerRemoteFilePath))
 
-			err := downloader.Download(l.cfg.UpdateURL, l.cfg.VerRemoteFilePath, l.cfg.CodePath+l.cfg.DownloadedVerFile)
+			err := downloader.Download(l.cfg.UpdateURL, l.cfg.VerRemoteFilePath, l.cfg.DownloadedVerFile)
 			if err != nil {
 				l.logger.V(1).Error(err, errOccur+errWhileDownloading+l.cfg.VerRemoteFilePath)
 			}
@@ -106,13 +104,13 @@ func main() {
 			logger.V(1).Info("update", "exist", ex)
 			if ex && err == nil {
 				info.SetText(updateExists)
-				err = downloader.Download(cfg.UpdateURL, cfg.UpdateArchName, cfg.CodePath+cfg.UpdateArchName)
+				err = downloader.Download(cfg.UpdateURL, cfg.UpdateArchName, cfg.UpdateArchName)
 				if err != nil {
 					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.UpdateArchName, err))
 					logger.V(1).Error(err, errOccur+errWhileDownloading+cfg.UpdateArchName)
 				} else {
 
-					err = filemanager.Unzip(cfg.CodePath+cfg.UpdateArchName, cfg.CodePath)
+					err = filemanager.Unzip(cfg.UpdateArchName, exeDir)
 					if err != nil {
 						info.SetText(fmt.Sprintf("%s %s: %v", errOccur, errWhileExtracting, err))
 						logger.V(1).Error(err, errOccur+errWhileExtracting)
@@ -149,13 +147,13 @@ func main() {
 }
 func (l *Launcher) checkUpdate() (bool, error) {
 
-	localVer, err := os.ReadFile(l.cfg.CodePath + l.cfg.VerLocalFilePath)
+	localVer, err := os.ReadFile(l.cfg.VerLocalFilePath)
 	if err != nil {
 		l.logger.V(1).Error(err, errOccur, readingVer)
 		return false, err
 	}
 
-	remoteVer, err := os.ReadFile(l.cfg.CodePath + l.cfg.DownloadedVerFile)
+	remoteVer, err := os.ReadFile(l.cfg.DownloadedVerFile)
 	if err != nil {
 		l.logger.V(1).Error(err, errOccur, readingNewVer)
 		return false, err
@@ -181,10 +179,6 @@ func (l *Launcher) checkUpdate() (bool, error) {
 }
 
 func (l *Launcher) run(exeDir string) {
-	if l.cfg.Env == "dev" {
-		exeDir = l.cfg.CodePath
-	}
-
 	log.Printf("path for start viewer: %s\\%s\n", exeDir, l.cfg.LocalExeFilename)
 	var cmd *exec.Cmd
 	cmd = exec.Command(exeDir + "\\" + l.cfg.LocalExeFilename)

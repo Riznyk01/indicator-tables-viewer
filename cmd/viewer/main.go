@@ -68,8 +68,8 @@ func main() {
 		newSettingsWindow(a, cfg, cfgPath, usernameEntry)
 	})
 
-	logger.V(1).Info("path to the ver file", "path", cfg.CodePath+cfg.VerLocalFilePath)
-	localVer, err := os.ReadFile(cfg.CodePath + cfg.VerLocalFilePath)
+	logger.V(1).Info("path to the ver file", "path", cfg.VerLocalFilePath)
+	localVer, err := os.ReadFile(cfg.VerLocalFilePath)
 	if err != nil {
 		logger.Error(err, text.ErrOccur, readingVer)
 	}

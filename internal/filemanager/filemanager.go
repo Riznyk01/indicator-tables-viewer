@@ -79,6 +79,7 @@ func MakeDirIfNotExist(path string) error {
 	return nil
 }
 func Unzip(zipFile string, dest string) error {
+
 	r, err := zip.OpenReader(zipFile)
 	if err != nil {
 		return err
@@ -92,8 +93,9 @@ func Unzip(zipFile string, dest string) error {
 		}
 		defer rc.Close()
 
-		path := dest + f.Name
+		path := dest + "\\" + f.Name
 
+		//os.RemoveAll()
 		if f.FileInfo().IsDir() {
 			os.MkdirAll(path, f.Mode())
 		} else {

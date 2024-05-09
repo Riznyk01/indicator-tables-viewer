@@ -1,5 +1,4 @@
 auto_update = true
-code_path = ""
 db_name = "MEDSTAT.GDB"
 downloaded_ver_file = "ver_remote"
 env = "prod"

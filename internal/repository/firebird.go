@@ -24,9 +24,7 @@ func NewFirebirdDB(cfg *config.Config, login, pass string) (*sql.DB, string, err
 		}
 	}
 
-	if cfg.Env == "dev" {
-		localPathToDb = cfg.CodePath
-	} else if cfg.Env == "prod" {
+	if cfg.Env == "prod" {
 		localPathToDb = cfg.LocalPath
 	}
 

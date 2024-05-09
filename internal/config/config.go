@@ -31,7 +31,6 @@ type Config struct {
 	LocalExeFilename    string        `toml:"local_exe_filename"`
 	LauncherExeFilename string        `toml:"launcher_exe_filename"`
 	LogFileExt          string        `toml:"log_file_extension"`
-	CodePath            string        `toml:"code_path"`
 	DownloadedVerFile   string        `toml:"downloaded_ver_file"`
 	LocalYearDbDir      string        `toml:"local_year_db_dir"`
 	LocalQuarterDbDir   string        `toml:"local_quarter_db_dir"`

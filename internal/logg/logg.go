@@ -12,9 +12,7 @@ import (
 func SetupLogger(cfg *config.Config) *logr.Logger {
 	var logFilePath string
 
-	if cfg.Env == "dev" {
-		logFilePath = cfg.CodePath
-	} else if cfg.Env == "prod" {
+	if cfg.Env == "prod" {
 		logFilePath = cfg.LocalPath + "\\"
 	}
 

@@ -14,7 +14,7 @@
 To run the program:
 
 1. Ensure that the CFG_PATH environment variable is set or specify the CFG_PATH flag.
-   The flag specifies the path to the config file as follows: --CFG_PATH=/config/config_prod.toml 
+   The flag specifies the path to the config file as follows: --CFG_PATH=config.toml 
 2. Execute launcher.exe.
 
 The launcher automatically checks for updates and updates the program if necessary.

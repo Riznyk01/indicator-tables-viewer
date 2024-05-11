@@ -40,7 +40,7 @@ func LineSplit(data [][]string) {
 	}
 }
 
-func VersionFormatter(localVer []byte, env string) string {
+func VersionFormatter(localVer []byte) string {
 	localVerStr := string(localVer)
 	year := localVerStr[:4]
 	month := localVerStr[4:6]
@@ -48,5 +48,5 @@ func VersionFormatter(localVer []byte, env string) string {
 	hour := localVerStr[8:10]
 	minute := localVerStr[10:12]
 	second := localVerStr[12:14]
-	return fmt.Sprintf("%s.%s.%s %s:%s:%s\n%s mode", year, month, day, hour, minute, second, env)
+	return fmt.Sprintf("%s.%s.%s %s:%s:%s\n", year, month, day, hour, minute, second)
 }

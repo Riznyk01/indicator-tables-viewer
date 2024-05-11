@@ -12,11 +12,7 @@ import (
 func SetupLogger(cfg *config.Config) *logr.Logger {
 	var logFilePath string
 
-	if cfg.Env == "prod" {
-		logFilePath = cfg.LocalPath + "\\"
-	}
-
-	logFilePath += cfg.LogDirName + cfg.LogFileName + "_" + cfg.LocalExeFilename[:len(cfg.LocalExeFilename)-4] + cfg.LogFileExt
+	logFilePath = cfg.LocalPath + "\\" + cfg.LogDirName + cfg.LogFileName + "_" + cfg.LocalExeFilename[:len(cfg.LocalExeFilename)-4] + cfg.LogFileExt
 
 	err := filemanager.CheckLogFileSize(logFilePath, cfg.LogFileSize)
 	if err != nil {

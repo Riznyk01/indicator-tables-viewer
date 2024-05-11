@@ -95,7 +95,6 @@ func Unzip(zipFile string, dest string) error {
 
 		path := dest + "\\" + f.Name
 
-		//os.RemoveAll()
 		if f.FileInfo().IsDir() {
 			os.MkdirAll(path, f.Mode())
 		} else {

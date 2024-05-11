@@ -75,7 +75,7 @@ func main() {
 	}
 
 	versionLabel := widget.NewLabel("")
-	verInfo := formatter.VersionFormatter(localVer, cfg.Env)
+	verInfo := formatter.VersionFormatter(localVer)
 	logger.V(1).Info("", "version", verInfo)
 	versionLabel.SetText("version: " + verInfo)
 

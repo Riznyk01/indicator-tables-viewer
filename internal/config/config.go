@@ -8,7 +8,6 @@ import (
 )
 
 type Config struct {
-	Env                 string        `toml:"env"`
 	Username            string        `toml:"username"`
 	Host                string        `toml:"host"`
 	Port                string        `toml:"port"`
@@ -27,7 +26,7 @@ type Config struct {
 	IconPath            string        `toml:"icon_path"`
 	VerRemoteFilePath   string        `toml:"path_to_remote_ver_file"`
 	VerLocalFilePath    string        `toml:"path_to_ver_file"`
-	UpdateArchName      string        `toml:"update_arch_name"`
+	UpdateArch          string        `toml:"update_arch"`
 	LocalExeFilename    string        `toml:"local_exe_filename"`
 	LauncherExeFilename string        `toml:"launcher_exe_filename"`
 	LogFileExt          string        `toml:"log_file_extension"`

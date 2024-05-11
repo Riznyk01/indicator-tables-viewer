@@ -24,9 +24,7 @@ func NewFirebirdDB(cfg *config.Config, login, pass string) (*sql.DB, string, err
 		}
 	}
 
-	if cfg.Env == "prod" {
-		localPathToDb = cfg.LocalPath
-	}
+	localPathToDb = cfg.LocalPath
 
 	if cfg.LocalMode {
 		connectionString = fmt.Sprintf("%s:%s@%s:%s/%s/%s",

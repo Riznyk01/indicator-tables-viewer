@@ -2,11 +2,20 @@
 
 set /p FTP_SERVER=<ftp_server.txt
 set /p FTP_USERNAME=<ftp_username.txt
-set /p FTP_PASSWORD_HASH=<ftp_password_hash.txt
+set /p FTP_PASSWORD=<ftp_password.txt
 
 set LOCAL_DIR=build
 
 cd /D %LOCAL_DIR%
 
-curl --ftp-ssl --ftp-ssl-reqd --insecure --user %FTP_USERNAME%:%FTP_PASSWORD_HASH% --upload-file update.zip ftp://%FTP_SERVER%/public_html/viewer_updates/update.zip
-curl --ftp-ssl --ftp-ssl-reqd --insecure --user %FTP_USERNAME%:%FTP_PASSWORD_HASH% --upload-file ver ftp://%FTP_SERVER%/public_html/viewer_updates/ver
+echo user %FTP_USERNAME%> ftpcmd.dat
+echo %FTP_PASSWORD%>> ftpcmd.dat
+echo binary>> ftpcmd.dat
+echo cd public_html/viewer_updates>> ftpcmd.dat
+echo put update.zip>> ftpcmd.dat
+echo put ver>> ftpcmd.dat
+echo quit>> ftpcmd.dat
+
+ftp -n -s:ftpcmd.dat %FTP_SERVER%
+
+del ftpcmd.dat

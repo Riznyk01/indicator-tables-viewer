@@ -180,14 +180,14 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	dbName.SetText(cfg.DBName)
 	dbNameCols := container.NewGridWithColumns(2, widget.NewLabel("db file name: "), dbName)
 
-	usernameSettings := widget.NewEntry()
-	usernameSettings.SetText(cfg.Username)
-	usernameSettingsCols := container.NewGridWithColumns(2, widget.NewLabel("username: "), usernameSettings)
+	username := widget.NewEntry()
+	username.SetText(cfg.Username)
+	usernameSettingsCols := container.NewGridWithColumns(2, widget.NewLabel("username: "), username)
 
-	remotePort := widget.NewEntry()
-	remotePort.SetText(cfg.Port)
 	remoteHost := widget.NewEntry()
 	remoteHost.SetText(cfg.Host)
+	remotePort := widget.NewEntry()
+	remotePort.SetText(cfg.Port)
 	remoteHostCols := container.NewGridWithColumns(4, widget.NewLabel("remote db settings"), widget.NewLabel("[host:port]: "), remoteHost, remotePort)
 
 	remotePath := widget.NewEntry()
@@ -210,10 +210,10 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	localQuarterDBDir.SetText(cfg.LocalQuarterDbDir)
 	localQuarterDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("dir name for quarter DB: "), localQuarterDBDir)
 
-	localPort := widget.NewEntry()
-	localPort.SetText(cfg.LocalPort)
 	localHost := widget.NewEntry()
 	localHost.SetText(cfg.LocalHost)
+	localPort := widget.NewEntry()
+	localPort.SetText(cfg.LocalPort)
 	localHostCols := container.NewGridWithColumns(4, widget.NewLabel("local db settings"), widget.NewLabel("[host:port]: "), localHost, localPort)
 
 	infoTimeout := widget.NewEntry()
@@ -244,13 +244,17 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 			return
 		}
 
-		cfg.Username = usernameEntry.Text
+		cfg.DBName = dbName.Text
+		cfg.Username = username.Text
 		cfg.Host = remoteHost.Text
 		cfg.Port = remotePort.Text
 		cfg.RemotePathToDb = remotePath.Text
+		cfg.RemoteYearDbDir = remoteYearDBDir.Text
+		cfg.RemoteQuarterDbDir = remoteQuarterDBDir.Text
+		cfg.LocalYearDbDir = localYearDBDir.Text
+		cfg.LocalQuarterDbDir = localQuarterDBDir.Text
 		cfg.LocalHost = localHost.Text
 		cfg.LocalPort = localPort.Text
-		cfg.DBName = dbName.Text
 		cfg.InfoTimeout = newInfoTimeout
 		cfg.XlsExportPath = xlsExport.Text
 

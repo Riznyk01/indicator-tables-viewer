@@ -4,9 +4,13 @@ go 1.22.0
 
 require (
 	fyne.io/fyne/v2 v2.4.4
+	github.com/go-logr/logr v1.4.1
+	github.com/go-logr/zapr v1.3.0
 	github.com/go-vgo/robotgo v0.110.0
 	github.com/nakagami/firebirdsql v0.9.8
 	github.com/pelletier/go-toml v1.9.5
+	github.com/tealeg/xlsx v1.0.5
+	go.uber.org/zap v1.26.0
 )
 
 require (
@@ -20,8 +24,6 @@ require (
 	github.com/gen2brain/shm v0.0.0-20230802011745-f2460f5984f7 // indirect
 	github.com/go-gl/gl v0.0.0-20211210172815-726fda9656d6 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20221017161538-93cebf72946b // indirect
-	github.com/go-logr/logr v1.4.1 // indirect
-	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-text/render v0.0.0-20230619120952-35bccb6164b8 // indirect
 	github.com/go-text/typesetting v0.1.0 // indirect
@@ -45,7 +47,6 @@ require (
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
-	github.com/tealeg/xlsx v1.0.5 // indirect
 	github.com/tevino/abool v1.2.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
@@ -57,7 +58,6 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	gitlab.com/nyarla/go-crypt v0.0.0-20160106005555-d9a5dc2b789b // indirect
 	go.uber.org/multierr v1.10.0 // indirect
-	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/image v0.12.0 // indirect
 	golang.org/x/mobile v0.0.0-20230531173138-3c911d8e3eda // indirect

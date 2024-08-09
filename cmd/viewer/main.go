@@ -138,8 +138,6 @@ func main() {
 		}
 	})
 
-	connStr := widget.NewLabel("")
-
 	checkboxLocalMode.SetChecked(cfg.LocalMode)
 	logger.V(1).Info("checkboxLocalMode is set according to the configuration")
 	checkboxYearDB.SetChecked(cfg.YearDB)
@@ -153,7 +151,8 @@ func main() {
 		} else {
 			login.Hide()
 			logger.V(1).Info("connected")
-			connStr.SetText("connection: " + connectionString)
+			connStr := widget.NewLabel(fmt.Sprintf("%s  %s", text.AppName, connectionString))
+
 			repo := repository.NewRepository(db)
 			newViewerWindow(a, logger, repo, cfg, connStr)
 		}
@@ -296,13 +295,10 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 	var tableName string
 	statData := newData()
 
-	w, h := ui.SetResolution()
-	windowSize := fyne.NewSize(w, h)
-	tableSize := fyne.NewSize(w, h)
+	w, h := ui.SetResolution(cfg)
 
 	window := app.NewWindow("Indicator tables viewer")
-	window.FullScreen()
-	window.Resize(windowSize)
+	window.Resize(fyne.NewSize(w, h))
 	window.SetMaster()
 	tablesList, _ := repo.GetTable()
 
@@ -359,31 +355,29 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 		t.Refresh()
 	})
 
-	info := widget.NewLabel("")
-
 	exportFileButton := widget.NewButton("export to excel", func() {
 		err := filemanager.ExportToExcel(statData, tableName, cfg.XlsExportPath)
 		if err != nil {
-			info.SetText(err.Error())
+			window.SetTitle(err.Error())
 			<-time.After(cfg.InfoTimeout)
-			info.SetText("")
+			window.SetTitle(connStr.Text)
 		} else {
-			info.SetText("file saved successfully")
+			window.SetTitle("file saved successfully")
 			<-time.After(cfg.InfoTimeout)
-			info.SetText("")
+			window.SetTitle(connStr.Text)
 		}
 	})
 
 	updateDateButton := widget.NewButton("update DB correction date", func() {
 		err := repo.UpdateDBCorrectionDate(time.Now())
 		if err != nil {
-			info.SetText(err.Error())
+			window.SetTitle(err.Error())
 			<-time.After(cfg.InfoTimeout)
-			info.SetText("")
+			window.SetTitle(connStr.Text)
 		} else {
-			info.SetText("date updated successfully")
+			window.SetTitle("date updated successfully")
 			<-time.After(cfg.InfoTimeout)
-			info.SetText("")
+			window.SetTitle(connStr.Text)
 		}
 	})
 
@@ -395,11 +389,9 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 	)
 
 	scr := container.NewVScroll(t)
-	scr.SetMinSize(tableSize)
-
-	infoLine := container.NewGridWithColumns(2, info, connStr)
-
-	window.SetContent(container.NewVBox(horizontalContent, scr, infoLine))
+	scr.SetMinSize(fyne.NewSize(w, h))
+	window.SetTitle(connStr.Text)
+	window.SetContent(container.NewVBox(horizontalContent, scr))
 	window.Show()
 }
 
@@ -410,9 +402,7 @@ func rowHeightCount(rowToCount []string) float32 {
 		if q > count {
 			count = q
 		}
-		//log.Printf("the filed to count is: %v, the field len is: %v\n", count, len(field))
 	}
-	//log.Printf("quanity of the \\n is: %v\n", count)
 	if count == 0 {
 		return 24
 	}

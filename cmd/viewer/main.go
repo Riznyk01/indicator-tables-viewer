@@ -40,7 +40,6 @@ func main() {
 	logger := logg.SetupLogger(cfg)
 
 	logger.V(1).Info("viewer started")
-
 	logger.V(1).Info("the dir to the exe file", "path", cfg.LocalPath)
 	logger.V(1).Info("", "the path of the config is", cfgPath)
 
@@ -55,16 +54,16 @@ func main() {
 	sizer := newTermTheme()
 	a.Settings().SetTheme(sizer)
 
-	login := a.NewWindow("Login Form")
+	login := a.NewWindow(text.LoginFormTitle)
 
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetText(cfg.Username)
-	usernameEntry.SetPlaceHolder("username")
+	usernameEntry.SetPlaceHolder(text.Username)
 
 	passwordEntry := widget.NewPasswordEntry()
-	passwordEntry.SetPlaceHolder("password")
+	passwordEntry.SetPlaceHolder(text.Password)
 
-	settingsButton := widget.NewButton("settings", func() {
+	settingsButton := widget.NewButton(text.SettingsButtonText, func() {
 		newSettingsWindow(a, cfg, cfgPath, usernameEntry)
 	})
 
@@ -221,7 +220,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 
 	xlsExport := widget.NewEntry()
 
-	selectDirButton := widget.NewButton("Choose Folder", func() {
+	selectDirButton := widget.NewButton(text.ChooseFolderButtonText, func() {
 		dirDialog := dialog.NewFolderOpen(func(uri fyne.ListableURI, err error) {
 			if err == nil && uri != nil {
 				fmt.Printf("Selected directory: %s", uri.Path())
@@ -235,7 +234,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	xlsExport.SetText(fmt.Sprintf("%v", cfg.XlsExportPath))
 	xlsExportCols := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel("XLS export path (program dir if empty):"), xlsExport, selectDirButton)
 
-	saveSettingsButton := widget.NewButton("save settings", func() {
+	saveSettingsButton := widget.NewButton(text.SaveSettingsButtonText, func() {
 
 		newInfoTimeout, err := time.ParseDuration(infoTimeout.Text)
 		if err != nil {
@@ -297,7 +296,7 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 
 	w, h := ui.SetResolution(cfg)
 
-	window := app.NewWindow("Indicator tables viewer")
+	window := app.NewWindow(text.AppName)
 	window.Resize(fyne.NewSize(w, h))
 	window.SetMaster()
 	tablesList, _ := repo.GetTable()
@@ -355,34 +354,34 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 		t.Refresh()
 	})
 
-	exportFileButton := widget.NewButton("export to excel", func() {
+	exportFileButton := widget.NewButton(text.ExportButtonText, func() {
 		err := filemanager.ExportToExcel(statData, tableName, cfg.XlsExportPath)
 		if err != nil {
 			window.SetTitle(err.Error())
 			<-time.After(cfg.InfoTimeout)
 			window.SetTitle(connStr.Text)
 		} else {
-			window.SetTitle("file saved successfully")
+			window.SetTitle(text.FileSaved)
 			<-time.After(cfg.InfoTimeout)
 			window.SetTitle(connStr.Text)
 		}
 	})
 
-	updateDateButton := widget.NewButton("update DB correction date", func() {
+	updateDateButton := widget.NewButton(text.UpdateDBDate, func() {
 		err := repo.UpdateDBCorrectionDate(time.Now())
 		if err != nil {
 			window.SetTitle(err.Error())
 			<-time.After(cfg.InfoTimeout)
 			window.SetTitle(connStr.Text)
 		} else {
-			window.SetTitle("date updated successfully")
+			window.SetTitle(text.DateUpdated)
 			<-time.After(cfg.InfoTimeout)
 			window.SetTitle(connStr.Text)
 		}
 	})
 
 	horizontalContent := container.NewHBox(
-		widget.NewLabel("select an indicators table for view:"),
+		widget.NewLabel(text.SelectTable),
 		dropdown,
 		exportFileButton,
 		updateDateButton,

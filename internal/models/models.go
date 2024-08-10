@@ -22,3 +22,5 @@ type IndicatorData struct {
 	P13    string
 	P14    string
 }
+
+type Translations map[string]string

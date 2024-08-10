@@ -13,8 +13,8 @@ import (
 	"indicator-tables-viewer/internal/filemanager"
 	"indicator-tables-viewer/internal/formatter"
 	"indicator-tables-viewer/internal/logg"
+	"indicator-tables-viewer/internal/models"
 	"indicator-tables-viewer/internal/repository"
-	"indicator-tables-viewer/internal/text"
 	"indicator-tables-viewer/internal/ui"
 	"log"
 	"os"
@@ -28,7 +28,6 @@ const (
 )
 
 func main() {
-
 	cfgPath := os.Getenv("CONFIG_PATH")
 	cfg := config.MustLoad(cfgPath)
 
@@ -38,6 +37,12 @@ func main() {
 	}
 	cfg.LocalPath = filepath.Dir(exePath)
 	logger := logg.SetupLogger(cfg)
+
+	lang, err := LoadTranslations(cfg.Lang)
+	if err != nil {
+		logger.V(1).Error(err, "error occurred while loading localization")
+	}
+	logger.V(1).Info("language file", cfg.Lang, lang)
 
 	logger.V(1).Info("viewer started")
 	logger.V(1).Info("the dir to the exe file", "path", cfg.LocalPath)
@@ -54,23 +59,23 @@ func main() {
 	sizer := newTermTheme()
 	a.Settings().SetTheme(sizer)
 
-	login := a.NewWindow(text.LoginFormTitle)
+	login := a.NewWindow(lang["LoginFormTitle"])
 
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetText(cfg.Username)
-	usernameEntry.SetPlaceHolder(text.Username)
+	usernameEntry.SetPlaceHolder(lang["Username"])
 
 	passwordEntry := widget.NewPasswordEntry()
-	passwordEntry.SetPlaceHolder(text.Password)
+	passwordEntry.SetPlaceHolder(lang["Password"])
 
-	settingsButton := widget.NewButton(text.SettingsButtonText, func() {
-		newSettingsWindow(a, cfg, cfgPath, usernameEntry)
+	settingsButton := widget.NewButton(lang["SettingsButtonText"], func() {
+		newSettingsWindow(a, cfg, cfgPath, usernameEntry, lang)
 	})
 
 	logger.V(1).Info("path to the ver file", "path", cfg.VerLocalFilePath)
 	localVer, err := os.ReadFile(cfg.VerLocalFilePath)
 	if err != nil {
-		logger.Error(err, text.ErrOccur, readingVer)
+		logger.Error(err, lang["ErrOccur"], readingVer)
 	}
 
 	versionLabel := widget.NewLabel("")
@@ -83,7 +88,7 @@ func main() {
 	dbPath := widget.NewEntry()
 	dbPath.SetText(cfg.RemotePathToDb + "/" + cfg.DBName)
 
-	checkboxLocalMode := widget.NewCheck("local db", func(checked bool) {
+	checkboxLocalMode := widget.NewCheck(lang["LocalDB"], func(checked bool) {
 		if checked {
 			cfg.LocalMode = true
 			dbPath.SetText("in program folder")
@@ -112,7 +117,7 @@ func main() {
 		}
 	})
 
-	checkboxYearDB := widget.NewCheck("year db (qtr. if not)", func(checked bool) {
+	checkboxYearDB := widget.NewCheck(lang["YearDB"], func(checked bool) {
 		if checked {
 			cfg.YearDB = true
 			logger.V(1).Info("config to update", "cfg", cfg)
@@ -150,10 +155,10 @@ func main() {
 		} else {
 			login.Hide()
 			logger.V(1).Info("connected")
-			connStr := widget.NewLabel(fmt.Sprintf("%s  %s", text.AppName, connectionString))
+			connStr := widget.NewLabel(fmt.Sprintf("%s  %s", lang["AppName"], connectionString))
 
 			repo := repository.NewRepository(db)
-			newViewerWindow(a, logger, repo, cfg, connStr)
+			newViewerWindow(a, logger, repo, cfg, connStr, lang)
 		}
 	})
 
@@ -169,7 +174,7 @@ func main() {
 	a.Run()
 }
 
-func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernameEntry *widget.Entry) {
+func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernameEntry *widget.Entry, lang models.Translations) {
 	settings := app.NewWindow("settings")
 	settings.Resize(fyne.NewSize(500, 100))
 	settings.CenterOnScreen()
@@ -220,7 +225,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 
 	xlsExport := widget.NewEntry()
 
-	selectDirButton := widget.NewButton(text.ChooseFolderButtonText, func() {
+	selectDirButton := widget.NewButton(lang["ChooseFolderButtonText"], func() {
 		dirDialog := dialog.NewFolderOpen(func(uri fyne.ListableURI, err error) {
 			if err == nil && uri != nil {
 				fmt.Printf("Selected directory: %s", uri.Path())
@@ -234,7 +239,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	xlsExport.SetText(fmt.Sprintf("%v", cfg.XlsExportPath))
 	xlsExportCols := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel("XLS export path (program dir if empty):"), xlsExport, selectDirButton)
 
-	saveSettingsButton := widget.NewButton(text.SaveSettingsButtonText, func() {
+	saveSettingsButton := widget.NewButton(lang["SaveSettingsButtonText"], func() {
 
 		newInfoTimeout, err := time.ParseDuration(infoTimeout.Text)
 		if err != nil {
@@ -289,14 +294,14 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	settings.SetContent(settingsRows)
 	settings.Show()
 }
-func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Repository, cfg *config.Config, connStr *widget.Label) {
+func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Repository, cfg *config.Config, connStr *widget.Label, lang models.Translations) {
 	log.Printf("Main window is started")
 	var tableName string
 	statData := newData()
 
 	w, h := ui.SetResolution(cfg)
 
-	window := app.NewWindow(text.AppName)
+	window := app.NewWindow(lang["AppName"])
 	window.Resize(fyne.NewSize(w, h))
 	window.SetMaster()
 	tablesList, _ := repo.GetTable()
@@ -354,34 +359,34 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 		t.Refresh()
 	})
 
-	exportFileButton := widget.NewButton(text.ExportButtonText, func() {
+	exportFileButton := widget.NewButton(lang["ExportButtonText"], func() {
 		err := filemanager.ExportToExcel(statData, tableName, cfg.XlsExportPath)
 		if err != nil {
 			window.SetTitle(err.Error())
 			<-time.After(cfg.InfoTimeout)
 			window.SetTitle(connStr.Text)
 		} else {
-			window.SetTitle(text.FileSaved)
+			window.SetTitle(lang["FileSaved"])
 			<-time.After(cfg.InfoTimeout)
 			window.SetTitle(connStr.Text)
 		}
 	})
 
-	updateDateButton := widget.NewButton(text.UpdateDBDate, func() {
+	updateDateButton := widget.NewButton(lang["UpdateDBDate"], func() {
 		err := repo.UpdateDBCorrectionDate(time.Now())
 		if err != nil {
 			window.SetTitle(err.Error())
 			<-time.After(cfg.InfoTimeout)
 			window.SetTitle(connStr.Text)
 		} else {
-			window.SetTitle(text.DateUpdated)
+			window.SetTitle(lang["DateUpdated"])
 			<-time.After(cfg.InfoTimeout)
 			window.SetTitle(connStr.Text)
 		}
 	})
 
 	horizontalContent := container.NewHBox(
-		widget.NewLabel(text.SelectTable),
+		widget.NewLabel(lang["SelectTable"]),
 		dropdown,
 		exportFileButton,
 		updateDateButton,

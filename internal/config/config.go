@@ -43,6 +43,7 @@ type Config struct {
 	H1Size              float32       `toml:"h1_size"`
 	W2Size              float32       `toml:"w2_size"`
 	H2Size              float32       `toml:"h2_size"`
+	Lang                string        `toml:"lang"`
 }
 
 func MustLoad(configPath string) *Config {

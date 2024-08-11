@@ -15,6 +15,7 @@ import (
 	"indicator-tables-viewer/internal/logg"
 	"indicator-tables-viewer/internal/models"
 	"indicator-tables-viewer/internal/repository"
+	"indicator-tables-viewer/internal/translator"
 	"indicator-tables-viewer/internal/ui"
 	"log"
 	"os"
@@ -38,7 +39,7 @@ func main() {
 	cfg.LocalPath = filepath.Dir(exePath)
 	logger := logg.SetupLogger(cfg)
 
-	lang, err := LoadTranslations(cfg.Lang)
+	lang, err := translator.LoadTranslations(cfg.Lang)
 	if err != nil {
 		logger.V(1).Error(err, "error occurred while loading localization")
 	}
@@ -59,7 +60,16 @@ func main() {
 	sizer := newTermTheme()
 	a.Settings().SetTheme(sizer)
 
-	login := a.NewWindow(lang["LoginFormTitle"])
+	logger.V(1).Info("path to the ver file", "path", cfg.VerLocalFilePath)
+	localVer, err := os.ReadFile(cfg.VerLocalFilePath)
+	if err != nil {
+		logger.Error(err, lang["ErrOccur"], readingVer)
+	}
+
+	verInfo := formatter.VersionFormatter(localVer)
+	logger.V(1).Info("", lang["Version"], verInfo)
+
+	login := a.NewWindow(fmt.Sprintf("%s %s %s", lang["LoginFormTitle"], lang["Version"], verInfo))
 
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetText(cfg.Username)
@@ -71,17 +81,6 @@ func main() {
 	settingsButton := widget.NewButton(lang["SettingsButtonText"], func() {
 		newSettingsWindow(a, cfg, cfgPath, usernameEntry, lang)
 	})
-
-	logger.V(1).Info("path to the ver file", "path", cfg.VerLocalFilePath)
-	localVer, err := os.ReadFile(cfg.VerLocalFilePath)
-	if err != nil {
-		logger.Error(err, lang["ErrOccur"], readingVer)
-	}
-
-	versionLabel := widget.NewLabel("")
-	verInfo := formatter.VersionFormatter(localVer)
-	logger.V(1).Info("", "version", verInfo)
-	versionLabel.SetText("version: " + verInfo)
 
 	username := container.NewGridWithColumns(4, widget.NewLabel(""), usernameEntry, passwordEntry, widget.NewLabel(""))
 
@@ -146,7 +145,7 @@ func main() {
 	logger.V(1).Info("checkboxLocalMode is set according to the configuration")
 	checkboxYearDB.SetChecked(cfg.YearDB)
 	logger.V(1).Info("checkboxYearDB is set according to the configuration")
-	loginButton := widget.NewButton("login", func() {
+	loginButton := widget.NewButton(lang["Login"], func() {
 		db, connectionString, err := repository.NewFirebirdDB(cfg, usernameEntry.Text, passwordEntry.Text)
 		if err != nil {
 			logger.Error(err, "")
@@ -162,11 +161,11 @@ func main() {
 		}
 	})
 
-	textRow := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel("username"), widget.NewLabel("password"), widget.NewLabel(""))
 	checkRow := container.NewGridWithColumns(3, widget.NewLabel(""), loginButton, widget.NewLabel(""))
-	settingsRow := container.NewGridWithColumns(5, versionLabel, widget.NewLabel(""), checkboxLocalMode, checkboxYearDB, settingsButton)
+	settingsRow := container.NewGridWithColumns(3, checkboxLocalMode, checkboxYearDB, settingsButton)
 
-	loginW := container.NewGridWithRows(4, textRow, username, checkRow, settingsRow)
+	loginW := container.NewGridWithRows(3, username, checkRow, settingsRow)
+
 	login.SetContent(loginW)
 	login.Resize(fyne.NewSize(1000, 100))
 	login.CenterOnScreen()
@@ -175,60 +174,60 @@ func main() {
 }
 
 func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernameEntry *widget.Entry, lang models.Translations) {
-	settings := app.NewWindow("settings")
+	settings := app.NewWindow(lang["SettingsTitle"])
 	settings.Resize(fyne.NewSize(500, 100))
 	settings.CenterOnScreen()
 
 	dbName := widget.NewEntry()
 	dbName.SetText(cfg.DBName)
-	dbNameCols := container.NewGridWithColumns(2, widget.NewLabel("db file name: "), dbName)
+	dbNameCols := container.NewGridWithColumns(2, widget.NewLabel(lang["DBFileName"]), dbName)
 
 	username := widget.NewEntry()
 	username.SetText(cfg.Username)
-	usernameSettingsCols := container.NewGridWithColumns(2, widget.NewLabel("username: "), username)
+	usernameSettingsCols := container.NewGridWithColumns(2, widget.NewLabel(lang["Username"]+":"), username)
 
 	remoteHost := widget.NewEntry()
 	remoteHost.SetText(cfg.Host)
 	remotePort := widget.NewEntry()
 	remotePort.SetText(cfg.Port)
-	remoteHostCols := container.NewGridWithColumns(4, widget.NewLabel("remote db settings"), widget.NewLabel("[host:port]: "), remoteHost, remotePort)
+	remoteHostCols := container.NewGridWithColumns(4, widget.NewLabel(lang["RemoteDBSettings"]), widget.NewLabel("[host:port]: "), remoteHost, remotePort)
 
 	remotePath := widget.NewEntry()
 	remotePath.SetText(cfg.RemotePathToDb)
-	remotePathCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("path to remote DB: "), remotePath)
+	remotePathCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(lang["PathToRemoteDB"]), remotePath)
 
 	remoteYearDBDir := widget.NewEntry()
 	remoteYearDBDir.SetText(cfg.RemoteYearDbDir)
-	remoteYearDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("dir name for year DB: "), remoteYearDBDir)
+	remoteYearDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(lang["DirForYearDB"]), remoteYearDBDir)
 
 	remoteQuarterDBDir := widget.NewEntry()
 	remoteQuarterDBDir.SetText(cfg.RemoteQuarterDbDir)
-	remoteQuarterDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("dir name for quarter DB: "), remoteQuarterDBDir)
+	remoteQuarterDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(lang["DirForQuarterDB"]), remoteQuarterDBDir)
 
 	localYearDBDir := widget.NewEntry()
 	localYearDBDir.SetText(cfg.LocalYearDbDir)
-	localYearDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("dir name for year DB: "), localYearDBDir)
+	localYearDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(lang["DirForYearDB"]), localYearDBDir)
 
 	localQuarterDBDir := widget.NewEntry()
 	localQuarterDBDir.SetText(cfg.LocalQuarterDbDir)
-	localQuarterDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel("dir name for quarter DB: "), localQuarterDBDir)
+	localQuarterDBDirCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(lang["DirForQuarterDB"]), localQuarterDBDir)
 
 	localHost := widget.NewEntry()
 	localHost.SetText(cfg.LocalHost)
 	localPort := widget.NewEntry()
 	localPort.SetText(cfg.LocalPort)
-	localHostCols := container.NewGridWithColumns(4, widget.NewLabel("local db settings"), widget.NewLabel("[host:port]: "), localHost, localPort)
+	localHostCols := container.NewGridWithColumns(4, widget.NewLabel(lang["LocalDBSettings"]), widget.NewLabel("[host:port]: "), localHost, localPort)
 
 	infoTimeout := widget.NewEntry()
 	infoTimeout.SetText(fmt.Sprintf("%v", cfg.InfoTimeout))
-	infoTimeoutCols := container.NewGridWithColumns(3, widget.NewLabel("other settings "), widget.NewLabel("info messages timeout: "), infoTimeout)
+	infoTimeoutCols := container.NewGridWithColumns(3, widget.NewLabel(lang["OtherSettings"]), widget.NewLabel(lang["InfoTimeout"]), infoTimeout)
 
 	xlsExport := widget.NewEntry()
 
 	selectDirButton := widget.NewButton(lang["ChooseFolderButtonText"], func() {
 		dirDialog := dialog.NewFolderOpen(func(uri fyne.ListableURI, err error) {
 			if err == nil && uri != nil {
-				fmt.Printf("Selected directory: %s", uri.Path())
+				fmt.Printf("%ы %s", lang["SelectedDirectory"], uri.Path())
 				cfg.XlsExportPath = uri.Path()
 				xlsExport.SetText(fmt.Sprintf("%v", cfg.XlsExportPath))
 			}
@@ -237,13 +236,13 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	})
 
 	xlsExport.SetText(fmt.Sprintf("%v", cfg.XlsExportPath))
-	xlsExportCols := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel("XLS export path (program dir if empty):"), xlsExport, selectDirButton)
+	xlsExportCols := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel(lang["XLSExportPath"]), xlsExport, selectDirButton)
 
 	saveSettingsButton := widget.NewButton(lang["SaveSettingsButtonText"], func() {
 
 		newInfoTimeout, err := time.ParseDuration(infoTimeout.Text)
 		if err != nil {
-			log.Printf("error occurred while parsing info messages timeout: %v\n", err)
+			log.Printf("%s parsing info messages timeout: %v\n", lang["ErrOccur"], err)
 			return
 		}
 
@@ -265,10 +264,10 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 
 		if err != nil {
 			log.Println(err)
-			errDialog := dialog.NewInformation("settings", err.Error(), settings)
+			errDialog := dialog.NewInformation(lang["SettingsTitle"], err.Error(), settings)
 			errDialog.Show()
 		} else {
-			successDialog := dialog.NewInformation("settings", "config has been changed", settings)
+			successDialog := dialog.NewInformation(lang["SettingsTitle"], "config has been changed", settings)
 			successDialog.Show()
 			usernameEntry.SetText(cfg.Username)
 		}

@@ -11,6 +11,8 @@ import (
 	"indicator-tables-viewer/internal/downloader"
 	"indicator-tables-viewer/internal/filemanager"
 	"indicator-tables-viewer/internal/logg"
+	"indicator-tables-viewer/internal/models"
+	"indicator-tables-viewer/internal/translator"
 	"log"
 	"os"
 	"os/exec"
@@ -20,27 +22,18 @@ import (
 )
 
 const (
-	errOccur               = "error occurred while"
-	errWhileExtracting     = "extracting update files"
-	configPath             = "path to the configuration file"
-	updateExists           = "program update exists"
-	title                  = "updates checker"
-	errWhileDownloading    = "downloading update"
-	updatedSuccessfully    = "program update downloaded successfully.\nstarting the program."
-	loadingVer             = "loading ver info file"
-	savingVer              = "saving ver info file"
-	readingVer             = "reading local ver info file"
-	newInfoFile            = "creating new version info file"
-	readingNewVer          = "reading downloaded ver info file"
-	remoteByte             = "remote []byte"
-	localByte              = "local []byte"
-	remoteConvErr          = "remoteVer converting error"
-	localConvErr           = "localVer converting error"
-	failedExePath          = "failed to get executable path"
 	updateDoesntExists     = "update doesn't exist"
 	updateCheckingErr      = "update checking error"
 	updDeletedSuccessfully = "archive deleted successfully"
-	whileDeleting          = "while deleting the"
+	failedExePath          = "failed to get executable path"
+	remoteConvErr          = "remoteVer converting error"
+	localConvErr           = "localVer converting error"
+	localByte              = "local []byte"
+	configPath             = "path to the configuration file"
+	readingVer             = "reading local ver info file"
+	readingNewVer          = "reading downloaded ver info file"
+	remoteByte             = "remote []byte"
+	errWhileDownloading    = "downloading update"
 )
 
 var cfgPath string
@@ -48,12 +41,14 @@ var cfgPath string
 type Launcher struct {
 	cfg    *config.Config
 	logger *logr.Logger
+	lang   models.Translations
 }
 
-func NewLauncher(cfg *config.Config, logger *logr.Logger) *Launcher {
+func NewLauncher(cfg *config.Config, logger *logr.Logger, lang models.Translations) *Launcher {
 	return &Launcher{
 		cfg:    cfg,
 		logger: logger,
+		lang:   lang,
 	}
 }
 
@@ -82,18 +77,25 @@ func main() {
 	logger := logg.SetupLogger(cfg)
 	logger.V(1).Info("cfg", "cfg", cfg)
 	logger.V(1).Info("launcher started")
-	l := NewLauncher(cfg, logger)
+
+	lang, err := translator.LoadTranslations(cfg.Lang)
+	if err != nil {
+		logger.V(1).Error(err, "error occurred while loading localization")
+	}
+	logger.V(1).Info("language file", cfg.Lang, lang)
+
+	l := NewLauncher(cfg, logger, lang)
 	a := app.New()
-	update := a.NewWindow(title)
-	info := widget.NewLabel("start")
+	update := a.NewWindow(l.lang["Title"])
+	info := widget.NewLabel(l.lang["Start"])
 
 	if cfg.AutoUpdate {
 		go func() {
 			l.logger.V(1).Info(fmt.Sprintf("update URL %s/%s:", l.cfg.UpdateURL, l.cfg.VerRemoteFilePath))
 
-			err := downloader.Download(l.cfg.UpdateURL, l.cfg.VerRemoteFilePath, l.cfg.DownloadedVerFile)
+			err := downloader.Download(l.cfg.UpdateURL, l.cfg.VerRemoteFilePath, l.cfg.DownloadedVerFile, l.lang)
 			if err != nil {
-				l.logger.V(1).Error(err, errOccur+errWhileDownloading+l.cfg.VerRemoteFilePath)
+				l.logger.V(1).Error(err, l.lang["ErrOccur"]+errWhileDownloading+l.cfg.VerRemoteFilePath)
 			}
 
 			ex, err := l.checkUpdate()
@@ -103,17 +105,17 @@ func main() {
 			}
 			logger.V(1).Info("update", "exist", ex)
 			if ex && err == nil {
-				info.SetText(updateExists)
-				err = downloader.Download(cfg.UpdateURL, cfg.UpdateArch, cfg.UpdateArch)
+				info.SetText(l.lang["UpdateExists"])
+				err = downloader.Download(cfg.UpdateURL, cfg.UpdateArch, cfg.UpdateArch, l.lang)
 				if err != nil {
 					info.SetText(fmt.Sprintf("%s %s: %v", errWhileDownloading, cfg.UpdateArch, err))
-					logger.V(1).Error(err, errOccur+errWhileDownloading+cfg.UpdateArch)
+					logger.V(1).Error(err, l.lang["ErrOccur"]+errWhileDownloading+cfg.UpdateArch)
 				} else {
 
 					err = filemanager.Unzip(cfg.UpdateArch, exeDir)
 					if err != nil {
-						info.SetText(fmt.Sprintf("%s %s: %v", errOccur, errWhileExtracting, err))
-						logger.V(1).Error(err, errOccur+errWhileExtracting)
+						info.SetText(fmt.Sprintf("%s %s: %v", l.lang["ErrOccur"], l.lang["ErrWhileExtracting"], err))
+						logger.V(1).Error(err, l.lang["ErrOccur"]+l.lang["ErrWhileExtracting"])
 
 					} else {
 						err = os.Rename("ver_remote", "ver")
@@ -123,10 +125,10 @@ func main() {
 						updArchPath := exeDir + "\\" + cfg.UpdateArch
 						err = os.Remove(updArchPath)
 						if err != nil {
-							logger.V(1).Info(fmt.Sprintf("%s %s %s", errOccur, whileDeleting, updArchPath))
+							logger.V(1).Info(fmt.Sprintf("%s %s %s", l.lang["ErrOccur"], l.lang["WhileDeleting"], updArchPath))
 						}
-						info.SetText(fmt.Sprintf("%s", updatedSuccessfully))
-						logger.V(1).Info(updatedSuccessfully)
+						info.SetText(fmt.Sprintf("%s", l.lang["UpdatedSuccessfully"]))
+						logger.V(1).Info(l.lang["UpdatedSuccessfully"])
 						logger.V(1).Info(fmt.Sprintf("%s %s", updArchPath, updDeletedSuccessfully))
 					}
 				}
@@ -155,13 +157,13 @@ func (l *Launcher) checkUpdate() (bool, error) {
 
 	localVer, err := os.ReadFile(l.cfg.VerLocalFilePath)
 	if err != nil {
-		l.logger.V(1).Error(err, errOccur, readingVer)
+		l.logger.V(1).Error(err, l.lang["ErrOccur"], readingVer)
 		return false, err
 	}
 
 	remoteVer, err := os.ReadFile(l.cfg.DownloadedVerFile)
 	if err != nil {
-		l.logger.V(1).Error(err, errOccur, readingNewVer)
+		l.logger.V(1).Error(err, l.lang["ErrOccur"], readingNewVer)
 		return false, err
 	}
 
@@ -190,7 +192,7 @@ func (l *Launcher) run(exeDir string) {
 	cmd = exec.Command(exeDir + "\\" + l.cfg.LocalExeFilename)
 	cmd.Env = append(os.Environ(), "CONFIG_PATH="+cfgPath)
 	if err := cmd.Start(); err != nil {
-		l.logger.Error(err, errOccur+l.cfg.LocalExeFilename)
+		l.logger.Error(err, l.lang["ErrOccur"]+l.cfg.LocalExeFilename)
 		return
 	}
 }

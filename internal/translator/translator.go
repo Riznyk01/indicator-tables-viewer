@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-// filename string
 func LoadTranslations(lng string) (models.Translations, error) {
 	file, err := os.Open(fmt.Sprintf("lang_%s.txt", lng))
 	if err != nil {

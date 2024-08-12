@@ -89,7 +89,7 @@ func (v *ViewingFirebird) GetColNameLocation(tableName string) (string, error) {
 func (v *ViewingFirebird) GetHeader(tableName string) ([]string, error) {
 	fc := "GetHeader"
 	var tableCols []string
-	query := "SELECT NAME FROM SCOL WHERE TABL = ? AND COL != 0"
+	query := "SELECT NAME FROM SCOL WHERE TABL = ? AND COL != 0 ORDER BY COL"
 	rows, err := v.db.Query(query, tableName)
 
 	if err != nil {

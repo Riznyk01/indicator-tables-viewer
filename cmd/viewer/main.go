@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -167,7 +168,7 @@ func main() {
 	loginW := container.NewGridWithRows(3, username, checkRow, settingsRow)
 
 	login.SetContent(loginW)
-	login.Resize(fyne.NewSize(1000, 100))
+	login.Resize(fyne.NewSize(800, 180))
 	login.CenterOnScreen()
 	login.Show()
 	a.Run()
@@ -238,6 +239,14 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 	xlsExport.SetText(fmt.Sprintf("%v", cfg.XlsExportPath))
 	xlsExportCols := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel(lang["XLSExportPath"]), xlsExport, selectDirButton)
 
+	resolutionWidthMultiplier := widget.NewEntry()
+	resolutionWidthMultiplier.SetText(fmt.Sprintf("%v", cfg.WidthMultiplier))
+
+	resolutionHeightMultiplier := widget.NewEntry()
+	resolutionHeightMultiplier.SetText(fmt.Sprintf("%v", cfg.HeightMultiplier))
+
+	resolutionMultiplierCols := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel(lang["MultiplierSettings"]), resolutionWidthMultiplier, resolutionHeightMultiplier)
+
 	saveSettingsButton := widget.NewButton(lang["SaveSettingsButtonText"], func() {
 
 		newInfoTimeout, err := time.ParseDuration(infoTimeout.Text)
@@ -260,6 +269,12 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 		cfg.InfoTimeout = newInfoTimeout
 		cfg.XlsExportPath = xlsExport.Text
 
+		widthMultipl, _ := stringToFloat(resolutionWidthMultiplier.Text)
+		heightMultipl, _ := stringToFloat(resolutionHeightMultiplier.Text)
+
+		cfg.WidthMultiplier = widthMultipl
+		cfg.HeightMultiplier = heightMultipl
+
 		err = config.UpdateConfig(cfg, cfgPath)
 
 		if err != nil {
@@ -276,7 +291,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 
 	buttonsRowCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(""), saveSettingsButton)
 
-	settingsRows := container.NewGridWithRows(12,
+	settingsRows := container.NewGridWithRows(13,
 		dbNameCols,
 		usernameSettingsCols,
 		remoteHostCols,
@@ -288,6 +303,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 		localYearDBDirCols,
 		infoTimeoutCols,
 		xlsExportCols,
+		resolutionMultiplierCols,
 		buttonsRowCols)
 
 	settings.SetContent(settingsRows)
@@ -455,4 +471,12 @@ func newTable(statData [][]string) *widget.Table {
 		},
 	)
 	return tbl
+}
+
+func stringToFloat(s string) (float32, error) {
+	f, err := strconv.ParseFloat(s, 32)
+	if err != nil {
+		return 0.8, err
+	}
+	return float32(f), nil
 }

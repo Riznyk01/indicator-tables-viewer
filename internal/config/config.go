@@ -39,11 +39,9 @@ type Config struct {
 	LogFileName         string        `toml:"log_file_name"`
 	LogDirName          string        `toml:"log_dir_name"`
 	LogFileSize         int64         `toml:"log_file_size"`
-	W1Size              float32       `toml:"w1_size"`
-	H1Size              float32       `toml:"h1_size"`
-	W2Size              float32       `toml:"w2_size"`
-	H2Size              float32       `toml:"h2_size"`
 	Lang                string        `toml:"lang"`
+	WidthMultiplier     float32       `toml:"width_multiplier"`
+	HeightMultiplier    float32       `toml:"height_multiplier"`
 }
 
 func MustLoad(configPath string) *Config {

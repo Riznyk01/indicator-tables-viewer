@@ -34,3 +34,4 @@ XLSExportPath=XLS export path (program dir if empty):
 Version=| program version:
 Login=login
 Start=start
+MultiplierSettings=resolution multiplier [width/height]

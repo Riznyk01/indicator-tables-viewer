@@ -35,3 +35,4 @@ Version=| версія програми:
 Login=увійти
 Start=запуск
 MultiplierSettings=множник роздільної здатності [ширина/висота]
+SetFontSize=розмір шрифта

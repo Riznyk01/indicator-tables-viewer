@@ -42,6 +42,7 @@ type Config struct {
 	Lang                string        `toml:"lang"`
 	WidthMultiplier     float32       `toml:"width_multiplier"`
 	HeightMultiplier    float32       `toml:"height_multiplier"`
+	FontSize            float32       `toml:"font_size"`
 }
 
 func MustLoad(configPath string) *Config {

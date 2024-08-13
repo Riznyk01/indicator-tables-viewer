@@ -10,9 +10,9 @@ type viewerTheme struct {
 	fontSize float32
 }
 
-func newTermTheme() *viewerTheme {
+func newTermTheme(size float32) *viewerTheme {
 	return &viewerTheme{
-		Theme: fyne.CurrentApp().Settings().Theme(), fontSize: 13,
+		Theme: fyne.CurrentApp().Settings().Theme(), fontSize: size,
 	}
 }
 

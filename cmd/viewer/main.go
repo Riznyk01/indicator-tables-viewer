@@ -58,7 +58,7 @@ func main() {
 	r, _ := loadRecourseFromPath(cfg.LocalPath + cfg.IconPath)
 	a.SetIcon(r)
 
-	sizer := newTermTheme()
+	sizer := newTermTheme(cfg.FontSize)
 	a.Settings().SetTheme(sizer)
 
 	logger.V(1).Info("path to the ver file", "path", cfg.VerLocalFilePath)
@@ -247,6 +247,10 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 
 	resolutionMultiplierCols := container.NewGridWithColumns(4, widget.NewLabel(""), widget.NewLabel(lang["MultiplierSettings"]), resolutionWidthMultiplier, resolutionHeightMultiplier)
 
+	setFontSize := widget.NewEntry()
+	setFontSize.SetText(fmt.Sprintf("%v", cfg.FontSize))
+	setFontSizeCols := container.NewGridWithColumns(3, widget.NewLabel(lang["SetFontSize"]), widget.NewLabel(""), setFontSize)
+
 	saveSettingsButton := widget.NewButton(lang["SaveSettingsButtonText"], func() {
 
 		newInfoTimeout, err := time.ParseDuration(infoTimeout.Text)
@@ -269,11 +273,13 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 		cfg.InfoTimeout = newInfoTimeout
 		cfg.XlsExportPath = xlsExport.Text
 
-		widthMultipl, _ := stringToFloat(resolutionWidthMultiplier.Text)
-		heightMultipl, _ := stringToFloat(resolutionHeightMultiplier.Text)
+		widthMultiplFloat, _ := stringToFloat(resolutionWidthMultiplier.Text)
+		heightMultiplFloat, _ := stringToFloat(resolutionHeightMultiplier.Text)
+		fontSizeFloat, _ := stringToFloat(setFontSize.Text)
 
-		cfg.WidthMultiplier = widthMultipl
-		cfg.HeightMultiplier = heightMultipl
+		cfg.WidthMultiplier = widthMultiplFloat
+		cfg.HeightMultiplier = heightMultiplFloat
+		cfg.FontSize = fontSizeFloat
 
 		err = config.UpdateConfig(cfg, cfgPath)
 
@@ -291,7 +297,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 
 	buttonsRowCols := container.NewGridWithColumns(3, widget.NewLabel(""), widget.NewLabel(""), saveSettingsButton)
 
-	settingsRows := container.NewGridWithRows(13,
+	settingsRows := container.NewGridWithRows(14,
 		dbNameCols,
 		usernameSettingsCols,
 		remoteHostCols,
@@ -304,6 +310,7 @@ func newSettingsWindow(app fyne.App, cfg *config.Config, cfgPath string, usernam
 		infoTimeoutCols,
 		xlsExportCols,
 		resolutionMultiplierCols,
+		setFontSizeCols,
 		buttonsRowCols)
 
 	settings.SetContent(settingsRows)
@@ -334,7 +341,7 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 		statData[0], _ = repo.GetHeader(colNameLocation)
 
 		formatter.LineSplit(statData)
-		// set the headers' height
+
 		headerHeight := rowHeightCount(statData[0])
 		t.SetRowHeight(0, headerHeight)
 
@@ -366,11 +373,11 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 		// set the data rows height
 		for rows := 1; rows < len(statData); rows++ {
 			// set the row height
-			rowHeight := rowHeightCount(statData[rows])
+			rowHeight := rowHeightCount(statData[rows]) * (cfg.FontSize / 13)
 			t.SetRowHeight(rows, rowHeight)
 		}
 
-		setColumnWidth(t, statData)
+		setColumnWidth(t, statData, cfg.FontSize)
 		t.Refresh()
 	})
 
@@ -414,6 +421,7 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 	window.Show()
 }
 
+// rowHeightCount set the headers' height
 func rowHeightCount(rowToCount []string) float32 {
 	count := 0
 	for _, field := range rowToCount {
@@ -430,7 +438,7 @@ func rowHeightCount(rowToCount []string) float32 {
 
 // setColumnWidth set the columns width after fetching new data
 // depending on data len and splitting by \n
-func setColumnWidth(t *widget.Table, statData [][]string) {
+func setColumnWidth(t *widget.Table, statData [][]string, fontSize float32) {
 
 	for c := 0; c < len(statData[0]); c++ {
 		var maxLen int
@@ -440,7 +448,7 @@ func setColumnWidth(t *widget.Table, statData [][]string) {
 			}
 		}
 		log.Printf("max text len for the %v column is: %v", c, maxLen)
-		t.SetColumnWidth(c, float32(maxLen)*7)
+		t.SetColumnWidth(c, float32(maxLen)*7*(fontSize/13))
 	}
 }
 

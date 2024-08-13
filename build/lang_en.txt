@@ -35,3 +35,4 @@ Version=| program version:
 Login=login
 Start=start
 MultiplierSettings=resolution multiplier [width/height]
+SetFontSize=font size

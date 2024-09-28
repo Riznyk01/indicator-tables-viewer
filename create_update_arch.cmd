@@ -7,4 +7,4 @@ if exist "%~dp0%build_folder%\%update_zip%" (
 )
 
 cd /D "%build_folder%"
-"C:\Program Files\7-Zip\7z" a "../"%build_folder%"/%update_zip%" "viewer.exe" "resources" "config.toml"
+"C:\Program Files\7-Zip\7z" a "../"%build_folder%"/%update_zip%" "viewer.exe" "resources" "config.toml" "lang_en.txt" "lang_ua.txt"

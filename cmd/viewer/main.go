@@ -332,9 +332,19 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 
 	dropdown := widget.NewSelect(tablesList, func(selected string) {
 		tableName = selected[:7]
-		formName := "F" + selected[1:3]
+
+		var formName string
+
+		if selected[3] == 75 {
+			// if P20K form is chose
+			formName = "F" + selected[1:3] + "K"
+			tableName = selected[:8]
+		} else {
+			formName = "F" + selected[1:3]
+		}
+
 		logger.V(1).Info("selected", "table name", tableName)
-		logger.V(1).Info("selected", "table name", formName)
+		logger.V(1).Info("selected", "form name", formName)
 		// get where columns names is located
 		colNameLocation, _ := repo.GetColNameLocation(tableName)
 		// get the tables' header

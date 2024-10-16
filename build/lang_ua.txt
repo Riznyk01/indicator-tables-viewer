@@ -3,7 +3,6 @@ ErrOccur=error occurred while
 DownUpd=завантаження файлу оновлення
 FileCreating=створення файлу
 FileSaved=файл успішно збережено
-UpdateDBDate=оновлення дати коригування БД
 DateUpdated=дата оновлена успішно
 SelectTable=виберіть зі списку таблицю для перегляду:
 ExportButtonText=експорт в excel

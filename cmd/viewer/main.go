@@ -404,24 +404,10 @@ func newViewerWindow(app fyne.App, logger *logr.Logger, repo *repository.Reposit
 		}
 	})
 
-	updateDateButton := widget.NewButton(lang["UpdateDBDate"], func() {
-		err := repo.UpdateDBCorrectionDate(time.Now())
-		if err != nil {
-			window.SetTitle(err.Error())
-			<-time.After(cfg.InfoTimeout)
-			window.SetTitle(connStr.Text)
-		} else {
-			window.SetTitle(lang["DateUpdated"])
-			<-time.After(cfg.InfoTimeout)
-			window.SetTitle(connStr.Text)
-		}
-	})
-
 	horizontalContent := container.NewHBox(
 		widget.NewLabel(lang["SelectTable"]),
 		dropdown,
 		exportFileButton,
-		updateDateButton,
 	)
 
 	scr := container.NewVScroll(t)

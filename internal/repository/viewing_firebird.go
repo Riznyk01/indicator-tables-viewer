@@ -6,7 +6,6 @@ import (
 	"indicator-tables-viewer/internal/models"
 	"log"
 	"strconv"
-	"time"
 )
 
 const (
@@ -314,17 +313,4 @@ func handleNullString(indicatorsNumbers []IndicatorDataFirebird) []models.Indica
 	}
 	log.Printf("%s: the indicators' numbers after processing NULLs are: %v\n", fc, processedData)
 	return processedData
-}
-
-func (v *ViewingFirebird) UpdateDBCorrectionDate(currentTime time.Time) error {
-	fc := "UpdateDBCorrectionDate"
-
-	query := "UPDATE V_PARAM_VALUES SET F_DATE_VAL = ? WHERE F_PARAM_NAME = ?"
-
-	_, err := v.db.Exec(query, currentTime, "GBackDate")
-	if err != nil {
-		log.Printf("%s: %v\n", fc, err)
-		return err
-	}
-	return nil
 }
